@@ -1,6 +1,6 @@
 #include <intercept.hpp>
 //#include <mysqlx/xdevapi.h>
-#include "result.h"
+#include "res.h"
 #include "query.h"
 #include "connection.h"
 

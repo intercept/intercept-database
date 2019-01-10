@@ -1,7 +1,7 @@
 #include "connection.h"
 #include <mysqlx/xdevapi.h>
 #include "query.h"
-#include "result.h"
+#include "res.h"
 
 using namespace intercept::client;
 using namespace mysqlx;

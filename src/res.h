@@ -4,6 +4,8 @@
 using namespace intercept;
 using namespace intercept::types;
 
+//#TODO rename sourcefile to queryResult. Cannot use result.cpp because mysql connector already uses that
+
 class Result {
 public:
 
