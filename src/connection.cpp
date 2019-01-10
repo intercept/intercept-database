@@ -78,7 +78,7 @@ game_value Connection::cmd_createConnectionArray(uintptr_t, game_value_parameter
     newCon->session = std::make_shared<mysqlx::Session>(settings);
 
 
-    return {};
+    return newCon;
 }
 
 game_value Connection::cmd_query(uintptr_t, game_value_parameter con, game_value_parameter qu) {

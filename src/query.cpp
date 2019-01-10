@@ -51,7 +51,7 @@ void Query::initCommands() {
     GameDataDBQuery_type = dbType.second;
 
 
-    handle_cmd_prepareQuery = client::host::register_sqf_command("db_createConnection", "TODO", Query::cmd_prepareQuery, dbType.first, game_data_type::ARRAY);
+    handle_cmd_prepareQuery = client::host::register_sqf_command("db_prepareQuery", "TODO", Query::cmd_prepareQuery, dbType.first, game_data_type::STRING);
 
     //#TODO only accept string,scalar,bool
     
