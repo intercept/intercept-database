@@ -4,3 +4,6 @@
 [submodule "mysql-connector-cpp"]
 	path = mysql-connector-cpp
 	url = https://github.com/mysql/mysql-connector-cpp.git
+[submodule "wolfssl"]
+	path = wolfssl
+	url = https://github.com/wolfSSL/wolfssl
