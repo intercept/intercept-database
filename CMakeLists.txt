@@ -3,11 +3,11 @@ cmake_minimum_required (VERSION 3.6)
 #----Make changes here
 
 #This is your project name. And also the filename of the resulting plugin.
-project (template-plugin)
+project (intercept_database)
 
 #This setting enables the use of the engine string type instead of converting to std::string.
 #Enabling this results in better performance when handling strings to SQF commands.
-option(USE_ENGINE_TYPES "USE_ENGINE_TYPES" OFF)
+option(USE_ENGINE_TYPES "USE_ENGINE_TYPES" ON)
 
 #----Don't change anything below this line
 
@@ -38,4 +38,20 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "" FORCE)
 
+
+SET(BUILD_STATIC ON CACHE BOOL "force static lib" FORCE)
+SET(STATIC_MSVCRT ON CACHE BOOL "force static lib" FORCE)
+
+SET(HAVE_SHARED_PTR ON CACHE BOOL "shut up CDK" FORCE)
+SET(HAVE_SYSTEM_ERROR ON CACHE BOOL "shut up CDK" FORCE)
+SET(HAVE_CODECVT_UTF8 ON CACHE BOOL "shut up CDK" FORCE)
+
+set(WITH_SSL "${CMAKE_SOURCE_DIR}/wolfssl" CACHE STRING
+   "Use the same setting as used when building connector" FORCE
+)
+
+add_subdirectory(mysql-connector-cpp)
+
+include_directories(AFTER "${PROJECT_SOURCE_DIR}/mysql-connector-cpp/include")
 add_subdirectory(src)
+
