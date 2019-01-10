@@ -1,2 +1,1 @@
-# intercept-plugin-template
-A template plugin for Intercept 
+This is the Intercept plugin template project.

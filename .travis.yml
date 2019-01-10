@@ -1,0 +1,19 @@
+dist: trusty
+
+language: cpp
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - gcc-7
+      - gcc-7-multilib
+      - g++-7
+      - g++-7-multilib
+
+before_script:
+  - CXX=g++-7 CC=gcc-7 cmake .
+
+script:
+  - make
