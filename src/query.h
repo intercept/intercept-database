@@ -6,7 +6,8 @@ using namespace intercept::types;
 class Query {
 public:
 
-	static game_value cmd_prepareQuery(uintptr_t, game_value_parameter right);
+    static game_value cmd_prepareQuery(uintptr_t, game_value_parameter right);
+    static game_value cmd_copyQuery(uintptr_t, game_value_parameter right);
 	static game_value cmd_bindValue(uintptr_t, game_value_parameter left, game_value_parameter right);
 	static game_value cmd_bindValueArray(uintptr_t, game_value_parameter left, game_value_parameter right);
 	static game_value cmd_bindNamedValue(uintptr_t, game_value_parameter left, game_value_parameter right);
@@ -20,6 +21,7 @@ public:
 	static inline game_data_type GameDataDBQuery_typeE;
 
 	static inline types::registered_sqf_function handle_cmd_prepareQuery;
+    static inline types::registered_sqf_function handle_cmd_copyQuery;
 	static inline types::registered_sqf_function handle_cmd_bindValue;
 	static inline types::registered_sqf_function handle_cmd_bindValueArray;
 	static inline types::registered_sqf_function handle_cmd_bindNamedValue;
