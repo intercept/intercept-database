@@ -44,7 +44,7 @@ SET(STATIC_MSVCRT ON CACHE BOOL "force static lib" FORCE)
 
 SET(WITH_UNIT_TESTS OFF CACHE BOOL "no mysql tests" FORCE)
 set(WITH_SSL "OFF" CACHE STRING "Disabled for now" FORCE)
-#set(LIBMARIADB_PLUGIN_LIBS "libcmtd.lib" CACHE STRING "force static build" FORCE)
+#TODO test with wolfssl
 
 if(CMAKE_COMPILER_IS_GNUCXX)
 	set(CMAKE_CXX_FLAGS "-std=c++1z -O2 -s -fPIC -fpermissive -static-libgcc -static-libstdc++")#-march=i686 -m32
@@ -57,51 +57,6 @@ else()
 	set(CMAKE_C_FLAGS_RELEASE "/MT /Zi /O2 /Ob1 /EHsc /MP") #with debug info
 	set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "/OPT:REF /DEBUG:FULL") 
 endif()
-
-
-
-
-# Override add_library() and set the "EXCLUDE_FROM_DEFAULT_BUILD" property to TRUE on all libraries that use "EXCLUDE_FROM_ALL".
-function(add_library TARGET)
-	_add_library(${TARGET} ${ARGN})
-	cmake_parse_arguments(OPTS "EXCLUDE_FROM_ALL" "" "" ${ARGN})
-	if(OPTS_EXCLUDE_FROM_ALL)
-		set_target_properties(${TARGET} PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD TRUE)
-	endif()
-endfunction()
-
-# Helper function to recursively set EXCLUDE_FROM_DEFAULT_BUILD to FALSE on all targets "TARGET" depends on
-function(_include_in_build TARGET)
-	if(TARGET ${TARGET})
-		get_target_property(TYPE ${TARGET} TYPE)
-		if(TYPE MATCHES "INTERFACE")
-			get_target_property(DEPS ${TARGET} INTERFACE_LINK_LIBRARIES)
-		else()
-			set_target_properties(${TARGET} PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD FALSE)
-			get_target_property(DEPS ${TARGET} LINK_LIBRARIES)
-		endif()
-		if(DEPS)
-			foreach(D ${DEPS})
-				_include_in_build(${D})
-			endforeach()
-		endif()
-	endif()
-endfunction()
-
-# Take executables as roots to run _include_in_build() on
-function(target_link_libraries TARGET)
-	_target_link_libraries(${TARGET} ${ARGN})
-	
-	get_target_property(_TYPE ${TARGET} TYPE)
-	if(_TYPE MATCHES "EXECUTABLE")
-		_include_in_build(${TARGET})
-	endif()
-endfunction()
-
-
-
-
-
 
 
 add_subdirectory(mariadb-connector-c)
