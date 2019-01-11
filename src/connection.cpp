@@ -76,8 +76,56 @@ game_value Connection::cmd_createConnectionArray(uintptr_t, game_value_parameter
     return newCon;
 }
 
-game_value Connection::cmd_query(uintptr_t, game_value_parameter con, game_value_parameter qu) {
+
+class callstack_item_WaitForQueryResult : public vm_context::callstack_item {
+
+public:
+
+    callstack_item_WaitForQueryResult(ref<GameDataDBAsyncResult> inp) : res(inp) {}
+
+    const char* getName() const override { return "stuff"; };
+    int varCount() const override { return 0; };
+    int getVariables(const IDebugVariable** storage, int count) const override { return 0; };
+    types::__internal::I_debug_value::RefType EvaluateExpression(const char* code, unsigned rad) override { return {}; };
+    void getSourceDocPosition(char* file, int fileSize, int& line) override {};
+    IDebugScope* getParent() override { __debugbreak(); return nullptr; };
+    r_string get_type() const override { return "stuff"sv; }
+
+
+
+
+    game_instruction* next(int& d1, const game_state* s) override {
+        if (res->data->res.wait_for(std::chrono::nanoseconds(0)) == std::future_status::ready) {
+            
+            //push result onto stack.
+            auto gd_res = new GameDataDBResult();
+            gd_res->res = res->data->res.get();
+            s->current_context->scriptStack[_stackEndAtStart] = game_value(gd_res);
+            d1 = 2; //done
+        } else {
+            d1 = 3; //wait
+        }
+
+        return nullptr;
+    };
+    bool someEH(void* state) override { return false; };
+    bool someEH2(void* state) override { return false; };
+    void on_before_exec() override {
+        
+    };
+
+    ref<GameDataDBAsyncResult> res;
+
+
+};
+
+game_value Connection::cmd_query(uintptr_t g , game_value_parameter con, game_value_parameter qu) {
+
+    auto gs = reinterpret_cast<game_state*>(g);
     
+
+   
+
     auto session = con.get_as<GameDataDBConnection>()->session;
     auto query = qu.get_as<GameDataDBQuery>();
 
@@ -93,12 +141,35 @@ game_value Connection::cmd_query(uintptr_t, game_value_parameter con, game_value
             default: ;
         }
     }
-    auto res = statement->query();
-    
-    auto gd_res = new GameDataDBResult();
-    gd_res->res = res;
 
-    return gd_res;
+
+    if (!gs->current_context->scheduled) {
+        auto res = statement->query();
+
+        auto gd_res = new GameDataDBResult();
+        gd_res->res = res;
+
+        return gd_res;
+    }
+    //Set up callstack item to suspend while waiting
+
+    auto& cs = reinterpret_cast<game_state*>(g)->current_context->callstack;
+
+    auto gd_res = new GameDataDBAsyncResult();
+    gd_res->data = std::make_shared<GameDataDBAsyncResult::dataT>();
+    gd_res->data->res =
+        std::async([statement]() -> mariadb::result_set_ref {
+                return statement->query();
+    });
+
+
+    auto newItem = new callstack_item_WaitForQueryResult(gd_res);
+    newItem->_parent = cs.back();
+    newItem->_stackEndAtStart = gs->current_context->scriptStack.size()-2;
+    newItem->_stackEnd = newItem->_stackEndAtStart+1;
+    newItem->_varSpace.parent = &cs.back()->_varSpace;
+    cs.emplace_back(newItem);
+    return 123;
 }
 
 game_value Connection::cmd_queryAsync(uintptr_t, game_value_parameter con, game_value_parameter qu) {
@@ -109,7 +180,7 @@ game_value Connection::cmd_queryAsync(uintptr_t, game_value_parameter con, game_
     auto gd_res = new GameDataDBAsyncResult();
     gd_res->data = std::make_shared<GameDataDBAsyncResult::dataT>();
     gd_res->data->res = 
-    std::async([session, stmt = query->queryString, boundV = query->boundValues]() -> mariadb::result_set_ref
+    std::async(std::launch::async,[session, stmt = query->queryString, boundV = query->boundValues]() -> mariadb::result_set_ref
     {
         auto statement = session->create_statement(stmt);
 
@@ -117,10 +188,9 @@ game_value Connection::cmd_queryAsync(uintptr_t, game_value_parameter con, game_
         for (auto& it : boundV) {
 
             switch (it.type_enum()) {
-            case game_data_type::SCALAR: statement->set_float(idx++, static_cast<float>(it)); break;
-            case game_data_type::BOOL: statement->set_boolean(idx++, static_cast<bool>(it)); break;
-            case game_data_type::STRING: statement->set_string(idx++, static_cast<r_string>(it)); break;
-            default:;
+                case game_data_type::SCALAR: statement->set_float(idx++, static_cast<float>(it)); break;
+                case game_data_type::BOOL: statement->set_boolean(idx++, static_cast<bool>(it)); break;
+                case game_data_type::STRING: statement->set_string(idx++, static_cast<r_string>(it)); break;
             }
         }
         return statement->query();
