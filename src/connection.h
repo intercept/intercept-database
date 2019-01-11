@@ -9,7 +9,8 @@ class Connection {
 public:
 
 	static game_value cmd_createConnectionArray(uintptr_t, game_value_parameter right);
-	static game_value cmd_query(uintptr_t, game_value_parameter con, game_value_parameter qu);
+    static game_value cmd_query(uintptr_t, game_value_parameter con, game_value_parameter qu);
+    static game_value cmd_queryAsync(uintptr_t, game_value_parameter con, game_value_parameter qu);
 
 
 
@@ -20,5 +21,6 @@ public:
 
 
 	static inline types::registered_sqf_function handle_cmd_createConnection;
-	static inline types::registered_sqf_function handle_cmd_query;
+    static inline types::registered_sqf_function handle_cmd_query;
+    static inline types::registered_sqf_function handle_cmd_queryAsync;
 };

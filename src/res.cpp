@@ -11,6 +11,12 @@ game_data* createGameDataDBResult(param_archive* ar) {
     return x;
 }
 
+game_data* createGameDataDBAsyncResult(param_archive* ar) {
+    auto x = new GameDataDBAsyncResult();
+    if (ar)
+        x->serialize(*ar);
+    return x;
+}
 
 game_value Result::cmd_affectedRows(uintptr_t, game_value_parameter right) {
     auto& res = right.get_as<GameDataDBResult>()->res;
@@ -61,16 +67,28 @@ game_value Result::cmd_toArray(uintptr_t, game_value_parameter right) {
 	return result;
 }
 
+game_value Result::cmd_bindCallback(uintptr_t, game_value_parameter left, game_value_parameter right) {
+    auto& res = left.get_as<GameDataDBAsyncResult>();
+
+    res->data->callback = right[0];
+    res->data->callbackArgs = right[1]; //#TODO call directly if result is ready
+    return {};
+}
+
 void ::Result::initCommands() {
     
-    auto dbType = host::register_sqf_type("DBQUERRY"sv, "databaseQuery"sv, "TODO"sv, "databaseQuery"sv, createGameDataDBResult);
+    auto dbType = host::register_sqf_type("DBRES"sv, "databaseResult"sv, "TODO"sv, "databaseResult"sv, createGameDataDBResult);
     GameDataDBResult_typeE = dbType.first;
     GameDataDBResult_type = dbType.second;
 
+    auto dbTypeA = host::register_sqf_type("DBRESASYNC"sv, "databaseResultAsync"sv, "TODO"sv, "databaseResultAsync"sv, createGameDataDBResult);
+    GameDataDBAsyncResult_typeE = dbTypeA.first;
+    GameDataDBAsyncResult_type = dbTypeA.second;
 
     handle_cmd_affectedRows = client::host::register_sqf_command("db_resultAffectedRows", "TODO", Result::cmd_affectedRows, game_data_type::SCALAR, GameDataDBResult_typeE);
     handle_cmd_lastInsertId = client::host::register_sqf_command("db_resultLastInsertId", "TODO", Result::cmd_lastInsertId, game_data_type::SCALAR, GameDataDBResult_typeE);
     handle_cmd_toArray = client::host::register_sqf_command("db_resultToArray", "TODO", Result::cmd_toArray, game_data_type::ARRAY, GameDataDBResult_typeE);
+    handle_cmd_bindCallback = client::host::register_sqf_command("db_bindCallback", "TODO", Result::cmd_bindCallback, game_data_type::NOTHING, GameDataDBAsyncResult_typeE, game_data_type::ARRAY);
 
 
 }

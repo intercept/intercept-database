@@ -7,7 +7,7 @@
 int intercept::api_version() { //This is required for the plugin to work.
     return 1;
 }
-
+auto_array<ref<GameDataDBAsyncResult>> asyncWork;
 void intercept::register_interfaces() {
     
 }
@@ -31,6 +31,28 @@ void intercept::pre_init() {
 
     intercept::sqf::system_chat("Intercept database has been loaded");
 }
+
+void intercept::on_frame() {
+
+    std::vector<ref<GameDataDBAsyncResult>> done;
+
+
+    auto p = std::stable_partition(asyncWork.begin(), asyncWork.end(),
+        [&](const auto& x) { return x->data->res.wait_for(std::chrono::nanoseconds(0)) == std::future_status::ready; });
+    // range insert with move
+    done.insert(done.end(), std::make_move_iterator(p),
+        std::make_move_iterator(asyncWork.end()));
+    // erase the moved-from elements.
+    asyncWork.erase(p, asyncWork.end());
+
+    for (auto& it : done) {
+        auto gd_res = new GameDataDBResult();
+        gd_res->res = it->data->res.get();
+
+        sqf::call(it->data->callback, { gd_res, it->data->callbackArgs });
+    }
+}
+
 
 /*
 
