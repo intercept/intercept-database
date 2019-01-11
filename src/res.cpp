@@ -2,7 +2,7 @@
 #include <mariadb++/result_set.hpp>
 
 using namespace intercept::client;
-
+extern auto_array<ref<GameDataDBAsyncResult>> asyncWork;
 
 game_data* createGameDataDBResult(param_archive* ar) {
     auto x = new GameDataDBResult();
@@ -75,6 +75,24 @@ game_value Result::cmd_bindCallback(uintptr_t, game_value_parameter left, game_v
     return {};
 }
 
+game_value Result::cmd_waitForResult(uintptr_t, game_value_parameter right) {
+    auto& res = right.get_as<GameDataDBAsyncResult>();
+
+    res->data->res.wait();
+
+    for (int i = 0; i < asyncWork.size(); ++i) {
+        if (asyncWork[i] == res) {
+            asyncWork.erase(i);
+            break;
+        }
+    }
+
+    auto gd_res = new GameDataDBResult();
+    gd_res->res = res->data->res.get();
+    sqf::call(res->data->callback, { gd_res, res->data->callbackArgs });
+    return gd_res;
+}
+
 void ::Result::initCommands() {
     
     auto dbType = host::register_sqf_type("DBRES"sv, "databaseResult"sv, "TODO"sv, "databaseResult"sv, createGameDataDBResult);
@@ -89,6 +107,7 @@ void ::Result::initCommands() {
     handle_cmd_lastInsertId = client::host::register_sqf_command("db_resultLastInsertId", "TODO", Result::cmd_lastInsertId, game_data_type::SCALAR, GameDataDBResult_typeE);
     handle_cmd_toArray = client::host::register_sqf_command("db_resultToArray", "TODO", Result::cmd_toArray, game_data_type::ARRAY, GameDataDBResult_typeE);
     handle_cmd_bindCallback = client::host::register_sqf_command("db_bindCallback", "TODO", Result::cmd_bindCallback, game_data_type::NOTHING, GameDataDBAsyncResult_typeE, game_data_type::ARRAY);
+    handle_cmd_waitForResult = client::host::register_sqf_command("db_waitForResult", "TODO", Result::cmd_waitForResult, GameDataDBResult_typeE, GameDataDBAsyncResult_typeE);
 
 
 }

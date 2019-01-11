@@ -14,6 +14,7 @@ public:
 	static game_value cmd_lastInsertId(uintptr_t, game_value_parameter right);
     static game_value cmd_toArray(uintptr_t, game_value_parameter right);
     static game_value cmd_bindCallback(uintptr_t, game_value_parameter left, game_value_parameter right);
+    static game_value cmd_waitForResult(uintptr_t, game_value_parameter right);
 
 	static void initCommands();
 	static inline sqf_script_type GameDataDBResult_type;
@@ -25,6 +26,7 @@ public:
 	static inline types::registered_sqf_function handle_cmd_lastInsertId;
     static inline types::registered_sqf_function handle_cmd_toArray;
     static inline types::registered_sqf_function handle_cmd_bindCallback;
+    static inline types::registered_sqf_function handle_cmd_waitForResult;
 };
 
 
