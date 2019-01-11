@@ -6,7 +6,7 @@
 	url = https://github.com/MariaDB/mariadb-connector-c
 [submodule "mariadbpp"]
 	path = mariadbpp
-	url = https://github.com/viaduck/mariadbpp
+	url = https://github.com/dedmen/mariadbpp
 [submodule "wolfssl"]
 	path = wolfssl
 	url = https://github.com/wolfSSL/wolfssl

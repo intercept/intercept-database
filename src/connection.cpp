@@ -18,7 +18,11 @@ public:
     float get_as_number() const override { return 0.f; }
     const r_string& get_as_string() const override { static r_string nm("stuff"sv); return nm; }
     game_data* copy() const override { return new GameDataDBConnection(*this); } //#TODO make sure this works
-    r_string to_string() const override { return r_string("stuff"sv); }
+    r_string to_string() const override {
+        if (!session) return r_string("<no session>"sv);
+        if (!session->connected()) return r_string("<not connected>"sv);
+        return "<connected to database: " + session->schema() + ">";        
+    }
     //virtual bool equals(const game_data*) const override; //#TODO isEqualTo on hashMaps would be quite nice I guess?
     const char* type_as_string() const override { return "databaseConnection"; }
     bool is_nil() const override { return false; }
@@ -92,7 +96,7 @@ game_value Connection::cmd_query(uintptr_t, game_value_parameter con, game_value
     auto res = statement->query();
     
     auto gd_res = new GameDataDBResult();
-    gd_res->res = std::move(res);
+    gd_res->res = res;
 
     return gd_res;
 }
