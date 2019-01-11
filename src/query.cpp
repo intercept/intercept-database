@@ -1,9 +1,7 @@
 #include "query.h"
-#include <mysqlx/xdevapi.h>
+#include <mariadb++/statement.hpp>
 
 using namespace intercept::client;
-using namespace mysqlx;
-
 
 
 game_data* createGameDataDBQuery(param_archive* ar) {

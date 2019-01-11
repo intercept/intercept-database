@@ -1,6 +1,6 @@
 #pragma once
 #include <intercept.hpp>
-#include <mysqlx/xdevapi.h>
+#include <mariadb++/result_set.hpp>
 using namespace intercept;
 using namespace intercept::types;
 
@@ -62,5 +62,5 @@ public:
         return serialization_return::no_error;
     }
 
-    mysqlx::SqlResult res;
+    mariadb::result_set_ref res;
 };

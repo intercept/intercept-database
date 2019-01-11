@@ -1,9 +1,12 @@
 [submodule "intercept"]
 	path = intercept
 	url = https://github.com/intercept/intercept.git
-[submodule "mysql-connector-cpp"]
-	path = mysql-connector-cpp
-	url = https://github.com/mysql/mysql-connector-cpp.git
+[submodule "mariadb-connector-c"]
+	path = mariadb-connector-c
+	url = https://github.com/MariaDB/mariadb-connector-c
+[submodule "mariadbpp"]
+	path = mariadbpp
+	url = https://github.com/viaduck/mariadbpp
 [submodule "wolfssl"]
 	path = wolfssl
 	url = https://github.com/wolfSSL/wolfssl

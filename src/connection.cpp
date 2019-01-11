@@ -1,10 +1,9 @@
 #include "connection.h"
-#include <mysqlx/xdevapi.h>
+#include <mariadb++/connection.hpp>
 #include "query.h"
 #include "res.h"
 
 using namespace intercept::client;
-using namespace mysqlx;
 
 
 class GameDataDBConnection : public game_data {
@@ -44,11 +43,7 @@ public:
         return serialization_return::no_error;
     }
 
-    //#TODO use connection pool
-    //https://dev.mysql.com/doc/x-devapi-userguide/en/connecting-connection-pool.html
-    //for multithreading later, we don't want to use same session in multiple threads
-
-    std::shared_ptr<mysqlx::Session> session;
+    mariadb::connection_ref session;
 };
 
 game_data* createGameDataDBConnection(param_archive* ar) {
@@ -66,16 +61,12 @@ game_value Connection::cmd_createConnectionArray(uintptr_t, game_value_parameter
     r_string pw = right[3];
     r_string db = right[4];
 
+    auto acc = mariadb::account::create(ip, user, pw, db, port);
+    
+
     auto newCon = new GameDataDBConnection();
 
-    SessionSettings settings(SessionOption::HOST, ip.c_str(),
-                            SessionOption::PORT, port);
-
-    settings.set(SessionOption::USER, user.c_str());
-    settings.set(SessionOption::PWD, pw.c_str());
-    settings.set(SessionOption::DB, db.c_str());
-
-    newCon->session = std::make_shared<mysqlx::Session>(settings);
+    newCon->session = mariadb::connection::create(acc);
 
 
     return newCon;
@@ -86,18 +77,19 @@ game_value Connection::cmd_query(uintptr_t, game_value_parameter con, game_value
     auto session = con.get_as<GameDataDBConnection>()->session;
     auto query = qu.get_as<GameDataDBQuery>();
 
-    auto statement = session->sql(query->queryString.c_str());
+    auto statement = session->create_statement(query->queryString);
 
+    uint32_t idx = 0;
     for (auto& it : query->boundValues) {
         
         switch (it.type_enum()) {
-            case game_data_type::SCALAR: statement.bind(static_cast<float>(it)); break;
-            case game_data_type::BOOL: statement.bind(static_cast<bool>(it)); break;
-            case game_data_type::STRING: statement.bind(static_cast<r_string>(it)); break;
+            case game_data_type::SCALAR: statement->set_float(idx++, static_cast<float>(it)); break;
+            case game_data_type::BOOL: statement->set_boolean(idx++, static_cast<bool>(it)); break;
+            case game_data_type::STRING: statement->set_string(idx++, static_cast<r_string>(it)); break;
             default: ;
         }
     }
-    auto res = statement.execute();
+    auto res = statement->query();
     
     auto gd_res = new GameDataDBResult();
     gd_res->res = std::move(res);

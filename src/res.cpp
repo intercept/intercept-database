@@ -1,5 +1,5 @@
 #include "res.h"
-#include <mysqlx/xdevapi.h>
+#include <mariadb++/result_set.hpp>
 
 using namespace intercept::client;
 
@@ -15,35 +15,43 @@ game_data* createGameDataDBResult(param_archive* ar) {
 game_value Result::cmd_affectedRows(uintptr_t, game_value_parameter right) {
     auto& res = right.get_as<GameDataDBResult>()->res;
 
-    return res.getAffectedItemsCount();
+    return res->row_count();
 }
 
 game_value Result::cmd_lastInsertId(uintptr_t, game_value_parameter right) {
     auto& res = right.get_as<GameDataDBResult>()->res;
 
-    return res.getAutoIncrementValue();
+    return res->get_last_insert_id();
 }
 
 game_value Result::cmd_toArray(uintptr_t, game_value_parameter right) {
     auto& res = right.get_as<GameDataDBResult>()->res;
     auto_array<game_value> result;
 
-    for (auto& it : res) {
+    while (res->next()) {
         auto_array<game_value> row;
 
-        for (int i = 0; i < it.colCount(); ++i) {
+        for (int i = 0; i < res->column_count(); ++i) {
 
-            switch (it.get(i).getType()) {
-                case mysqlx::Value::VNULL: row.emplace_back(game_value{}); break;
-                case mysqlx::Value::UINT64: row.emplace_back(it.get(i).get<uint64_t>()); break;
-                case mysqlx::Value::INT64: row.emplace_back(static_cast<float>(it.get(i).get<int64_t>())); break;
-                case mysqlx::Value::FLOAT: row.emplace_back(it.get(i).get<float>()); break;
-                case mysqlx::Value::DOUBLE:row.emplace_back(static_cast<float>(it.get(i).get<double>())); break;
-                case mysqlx::Value::BOOL: row.emplace_back(it.get(i).get<bool>()); break;
-				case mysqlx::Value::STRING: row.emplace_back(static_cast<std::string>(it.get(i).get<mysqlx::string>())); break;
-                case mysqlx::Value::DOCUMENT: break;
-                case mysqlx::Value::RAW: break;
-                case mysqlx::Value::ARRAY: break;
+            switch (res->column_type(i)) {
+                case mariadb::value::null: row.emplace_back(game_value{}); break;
+                case mariadb::value::date: row.emplace_back(res->get_string(i)); break;
+                case mariadb::value::date_time: row.emplace_back(res->get_string(i)); break;
+                case mariadb::value::time: row.emplace_back(res->get_string(i)); break;
+                case mariadb::value::string: row.emplace_back(res->get_string(i)); break;
+                case mariadb::value::boolean: row.emplace_back(res->get_boolean(i)); break;
+                case mariadb::value::decimal: row.emplace_back(res->get_decimal(i).float32()); break;
+                case mariadb::value::unsigned8: row.emplace_back(res->get_float(i)); break;
+                case mariadb::value::signed8: row.emplace_back(res->get_float(i)); break;
+                case mariadb::value::unsigned16: row.emplace_back(res->get_float(i)); break;
+                case mariadb::value::signed16: row.emplace_back(res->get_float(i)); break;
+                case mariadb::value::unsigned32: row.emplace_back(res->get_float(i)); break;
+                case mariadb::value::signed32: row.emplace_back(res->get_float(i)); break;
+                case mariadb::value::unsigned64: row.emplace_back(res->get_float(i)); break;
+                case mariadb::value::signed64: row.emplace_back(res->get_float(i)); break;
+                case mariadb::value::float32: row.emplace_back(res->get_float(i)); break;
+                case mariadb::value::double64: row.emplace_back(res->get_float(i)); break;
+                case mariadb::value::enumeration: row.emplace_back(res->get_string(i)); break;
                 default: ;
             }            
         }
