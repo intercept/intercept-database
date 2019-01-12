@@ -109,7 +109,8 @@ public:
         return serialization_return::no_error;
     }
     struct dataT {
-        std::future<mariadb::result_set_ref> res;
+        std::future<bool> fut;
+        mariadb::result_set_ref res;
         game_value callback;
         game_value callbackArgs;
     };

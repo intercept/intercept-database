@@ -1,8 +1,8 @@
 #include "res.h"
 #include <mariadb++/result_set.hpp>
+#include "threading.h"
 
 using namespace intercept::client;
-extern auto_array<ref<GameDataDBAsyncResult>> asyncWork;
 
 game_data* createGameDataDBResult(param_archive* ar) {
     auto x = new GameDataDBResult();
@@ -78,17 +78,23 @@ game_value Result::cmd_bindCallback(uintptr_t, game_value_parameter left, game_v
 game_value Result::cmd_waitForResult(uintptr_t, game_value_parameter right) {
     auto& res = right.get_as<GameDataDBAsyncResult>();
 
-    res->data->res.wait();
+    res->data->fut.wait();
 
-    for (int i = 0; i < asyncWork.size(); ++i) {
-        if (asyncWork[i] == res) {
-            asyncWork.erase(i);
+    std::unique_lock l(Threading::get().asyncWorkMutex);
+    auto& tasks = Threading::get().completedAsyncTasks;
+    for (int i = 0; i < tasks.size(); ++i) {
+        if (tasks[i] == res) {
+            tasks.erase(tasks.begin()+i);
             break;
         }
     }
+    if (tasks.empty())
+        Threading::get().hasCompletedAsyncWork = false;
+    l.unlock();
+
 
     auto gd_res = new GameDataDBResult();
-    gd_res->res = res->data->res.get();
+    gd_res->res = res->data->res;
     sqf::call(res->data->callback, { gd_res, res->data->callbackArgs });
     return gd_res;
 }

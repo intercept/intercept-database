@@ -4,9 +4,9 @@
 #include "res.h"
 #include "mariadb++/exceptions.hpp"
 #include <winsock2.h>
+#include "threading.h"
 
 using namespace intercept::client;
-extern auto_array<ref<GameDataDBAsyncResult>> asyncWork;
 
 class GameDataDBConnection : public game_data {
 
@@ -109,11 +109,11 @@ public:
 
 
     game_instruction* next(int& d1, const game_state* s) override {
-        if (res->data->res.wait_for(std::chrono::nanoseconds(0)) == std::future_status::ready) {
+        if (res->data->fut.wait_for(std::chrono::nanoseconds(0)) == std::future_status::ready) {
             
             //push result onto stack.
             auto gd_res = new GameDataDBResult();
-            gd_res->res = res->data->res.get();
+            gd_res->res = res->data->res;
             s->current_context->scriptStack[_stackEndAtStart] = game_value(gd_res);
             d1 = 2; //done
         } else {
@@ -143,21 +143,21 @@ game_value Connection::cmd_execute(uintptr_t g , game_value_parameter con, game_
     auto session = con.get_as<GameDataDBConnection>()->session;
     auto query = qu.get_as<GameDataDBQuery>();
 
-    auto statement = session->create_statement(query->getQueryString());
+    if (!gs->current_context->scheduled) {
 
-    uint32_t idx = 0;
-    for (auto& it : query->boundValues) {
-        
-        switch (it.type_enum()) {
+        auto statement = session->create_statement(query->getQueryString());
+
+        uint32_t idx = 0;
+        for (auto& it : query->boundValues) {
+
+            switch (it.type_enum()) {
             case game_data_type::SCALAR: statement->set_float(idx++, static_cast<float>(it)); break;
             case game_data_type::BOOL: statement->set_boolean(idx++, static_cast<bool>(it)); break;
             case game_data_type::STRING: statement->set_string(idx++, static_cast<r_string>(it)); break;
-            default: ;
+            default:;
+            }
         }
-    }
 
-
-    if (!gs->current_context->scheduled) {
         auto res = statement->query();
 
         auto gd_res = new GameDataDBResult();
@@ -171,11 +171,33 @@ game_value Connection::cmd_execute(uintptr_t g , game_value_parameter con, game_
 
     auto gd_res = new GameDataDBAsyncResult();
     gd_res->data = std::make_shared<GameDataDBAsyncResult::dataT>();
-    gd_res->data->res =
-        std::async([statement]() -> mariadb::result_set_ref {
-                return statement->query();
-    });
 
+
+
+    gd_res->data->fut = Threading::get().pushTask(session,
+        [stmt = query->getQueryString(), boundV = query->boundValues, result = gd_res->data](mariadb::connection_ref con) -> bool
+    {
+        try {
+            auto statement = con->create_statement(stmt);
+            uint32_t idx = 0;
+            for (auto& it : boundV) {
+
+                switch (it.type_enum()) {
+                case game_data_type::SCALAR: statement->set_float(idx++, static_cast<float>(it)); break;
+                case game_data_type::BOOL: statement->set_boolean(idx++, static_cast<bool>(it)); break;
+                case game_data_type::STRING: statement->set_string(idx++, static_cast<r_string>(it)); break;
+                }
+            }
+            result->res = statement->query();
+            return true;
+        }
+        catch (mariadb::exception::connection& x) {
+            __debugbreak();
+
+
+            return false;
+        }
+    });
 
     auto newItem = new callstack_item_WaitForQueryResult(gd_res);
     newItem->_parent = cs.back();
@@ -193,12 +215,11 @@ game_value Connection::cmd_executeAsync(uintptr_t, game_value_parameter con, gam
 
     auto gd_res = new GameDataDBAsyncResult();
     gd_res->data = std::make_shared<GameDataDBAsyncResult::dataT>();
-    gd_res->data->res = 
-    std::async(std::launch::async,[session, stmt = query->getQueryString(), boundV = query->boundValues]() -> mariadb::result_set_ref
+    gd_res->data->fut = Threading::get().pushTask(session,   
+    [stmt = query->getQueryString(), boundV = query->boundValues, result = gd_res->data](mariadb::connection_ref con) -> bool
     {
-
         try {
-            auto statement = session->create_statement(stmt);
+            auto statement = con->create_statement(stmt);
             uint32_t idx = 0;
             for (auto& it : boundV) {
 
@@ -208,18 +229,16 @@ game_value Connection::cmd_executeAsync(uintptr_t, game_value_parameter con, gam
                 case game_data_type::STRING: statement->set_string(idx++, static_cast<r_string>(it)); break;
                 }
             }
-            return statement->query();
+            result->res = statement->query();
+            return true;
         } catch (mariadb::exception::connection& x) {
             __debugbreak();
 
 
-            return {};
+            return false;
         }
-        
-
-
-    });
-    asyncWork.emplace_back(gd_res);
+    }, true);
+    Threading::get().pushAsyncWork(gd_res);
     return gd_res;
 }
 
