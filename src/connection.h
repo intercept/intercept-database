@@ -8,9 +8,10 @@ using namespace intercept::types;
 class Connection {
 public:
 
-	static game_value cmd_createConnectionArray(uintptr_t, game_value_parameter right);
-    static game_value cmd_query(uintptr_t, game_value_parameter con, game_value_parameter qu);
-    static game_value cmd_queryAsync(uintptr_t, game_value_parameter con, game_value_parameter qu);
+    static game_value cmd_createConnectionArray(uintptr_t, game_value_parameter right);
+    static game_value cmd_createConnectionConfig(uintptr_t, game_value_parameter right);
+    static game_value cmd_execute(uintptr_t, game_value_parameter con, game_value_parameter qu);
+    static game_value cmd_executeAsync(uintptr_t, game_value_parameter con, game_value_parameter qu);
 
 
 
@@ -20,7 +21,8 @@ public:
 	static inline game_data_type GameDataDBConnection_typeE;
 
 
-	static inline types::registered_sqf_function handle_cmd_createConnection;
-    static inline types::registered_sqf_function handle_cmd_query;
-    static inline types::registered_sqf_function handle_cmd_queryAsync;
+    static inline types::registered_sqf_function handle_cmd_createConnection;
+    static inline types::registered_sqf_function handle_cmd_createConnectionConfig;
+    static inline types::registered_sqf_function handle_cmd_execute;
+    static inline types::registered_sqf_function handle_cmd_executeAsync;
 };

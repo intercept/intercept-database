@@ -1,5 +1,6 @@
 #pragma once
 #include <intercept.hpp>
+#include "config.h"
 using namespace intercept;
 using namespace intercept::types;
 
@@ -7,6 +8,12 @@ class Query {
 public:
 
     static game_value cmd_prepareQuery(uintptr_t, game_value_parameter right);
+    static game_value cmd_prepareQueryAr(uintptr_t, game_value_parameter right);
+    static game_value cmd_prepareQueryConfig(uintptr_t, game_value_parameter right);
+    static game_value cmd_prepareQueryConfigAr(uintptr_t, game_value_parameter right);
+
+
+
     static game_value cmd_copyQuery(uintptr_t, game_value_parameter right);
 	static game_value cmd_bindValue(uintptr_t, game_value_parameter left, game_value_parameter right);
 	static game_value cmd_bindValueArray(uintptr_t, game_value_parameter left, game_value_parameter right);
@@ -20,7 +27,10 @@ public:
 	static inline sqf_script_type GameDataDBQuery_type;
 	static inline game_data_type GameDataDBQuery_typeE;
 
-	static inline types::registered_sqf_function handle_cmd_prepareQuery;
+    static inline types::registered_sqf_function handle_cmd_prepareQuery;
+    static inline types::registered_sqf_function handle_cmd_prepareQueryAr;
+    static inline types::registered_sqf_function handle_cmd_prepareQueryConfig;
+    static inline types::registered_sqf_function handle_cmd_prepareQueryConfigAr;
     static inline types::registered_sqf_function handle_cmd_copyQuery;
 	static inline types::registered_sqf_function handle_cmd_bindValue;
 	static inline types::registered_sqf_function handle_cmd_bindValueArray;
@@ -65,6 +75,18 @@ public:
         return serialization_return::no_error;
     }
 
+    r_string getQueryString() {
+        if (isConfigQuery) {
+            auto gotQuery = Config::get().getQuery(queryString);
+            if (!gotQuery.empty()) return gotQuery;
+        }
+        return queryString;
+    }
+
+
+
+
     auto_array<game_value> boundValues;
+    bool isConfigQuery = false;
     r_string queryString;
 };

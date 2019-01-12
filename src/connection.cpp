@@ -2,6 +2,8 @@
 #include <mariadb++/connection.hpp>
 #include "query.h"
 #include "res.h"
+#include "mariadb++/exceptions.hpp"
+#include <winsock2.h>
 
 using namespace intercept::client;
 extern auto_array<ref<GameDataDBAsyncResult>> asyncWork;
@@ -72,6 +74,18 @@ game_value Connection::cmd_createConnectionArray(uintptr_t, game_value_parameter
 
     newCon->session = mariadb::connection::create(acc);
 
+    return newCon;
+}
+
+game_value Connection::cmd_createConnectionConfig(uintptr_t, game_value_parameter right) {
+    
+    auto acc = Config::get().getAccount(right);
+    if (!acc) return  {};
+
+
+    auto newCon = new GameDataDBConnection();
+
+    newCon->session = mariadb::connection::create(acc);
 
     return newCon;
 }
@@ -119,7 +133,7 @@ public:
 
 };
 
-game_value Connection::cmd_query(uintptr_t g , game_value_parameter con, game_value_parameter qu) {
+game_value Connection::cmd_execute(uintptr_t g , game_value_parameter con, game_value_parameter qu) {
 
     auto gs = reinterpret_cast<game_state*>(g);
     
@@ -129,7 +143,7 @@ game_value Connection::cmd_query(uintptr_t g , game_value_parameter con, game_va
     auto session = con.get_as<GameDataDBConnection>()->session;
     auto query = qu.get_as<GameDataDBQuery>();
 
-    auto statement = session->create_statement(query->queryString);
+    auto statement = session->create_statement(query->getQueryString());
 
     uint32_t idx = 0;
     for (auto& it : query->boundValues) {
@@ -172,7 +186,7 @@ game_value Connection::cmd_query(uintptr_t g , game_value_parameter con, game_va
     return 123;
 }
 
-game_value Connection::cmd_queryAsync(uintptr_t, game_value_parameter con, game_value_parameter qu) {
+game_value Connection::cmd_executeAsync(uintptr_t, game_value_parameter con, game_value_parameter qu) {
     
     auto session = con.get_as<GameDataDBConnection>()->session;
     auto query = qu.get_as<GameDataDBQuery>();
@@ -180,20 +194,30 @@ game_value Connection::cmd_queryAsync(uintptr_t, game_value_parameter con, game_
     auto gd_res = new GameDataDBAsyncResult();
     gd_res->data = std::make_shared<GameDataDBAsyncResult::dataT>();
     gd_res->data->res = 
-    std::async(std::launch::async,[session, stmt = query->queryString, boundV = query->boundValues]() -> mariadb::result_set_ref
+    std::async(std::launch::async,[session, stmt = query->getQueryString(), boundV = query->boundValues]() -> mariadb::result_set_ref
     {
-        auto statement = session->create_statement(stmt);
 
-        uint32_t idx = 0;
-        for (auto& it : boundV) {
+        try {
+            auto statement = session->create_statement(stmt);
+            uint32_t idx = 0;
+            for (auto& it : boundV) {
 
-            switch (it.type_enum()) {
+                switch (it.type_enum()) {
                 case game_data_type::SCALAR: statement->set_float(idx++, static_cast<float>(it)); break;
                 case game_data_type::BOOL: statement->set_boolean(idx++, static_cast<bool>(it)); break;
                 case game_data_type::STRING: statement->set_string(idx++, static_cast<r_string>(it)); break;
+                }
             }
+            return statement->query();
+        } catch (mariadb::exception::connection& x) {
+            __debugbreak();
+
+
+            return {};
         }
-        return statement->query();
+        
+
+
     });
     asyncWork.emplace_back(gd_res);
     return gd_res;
@@ -206,7 +230,8 @@ void Connection::initCommands() {
     GameDataDBConnection_type = dbType.second;
 
 
-    handle_cmd_createConnection = host::register_sqf_command("db_createConnection", "TODO", Connection::cmd_createConnectionArray, GameDataDBConnection_typeE, game_data_type::ARRAY);
-    handle_cmd_query = host::register_sqf_command("db_query", "TODO", Connection::cmd_query, Result::GameDataDBResult_typeE, GameDataDBConnection_typeE, Query::GameDataDBQuery_typeE);
-    handle_cmd_queryAsync = host::register_sqf_command("db_queryAsync", "TODO", Connection::cmd_queryAsync, Result::GameDataDBAsyncResult_typeE, GameDataDBConnection_typeE, Query::GameDataDBQuery_typeE);
+    handle_cmd_createConnection = host::register_sqf_command("dbCreateConnection", "TODO", Connection::cmd_createConnectionArray, GameDataDBConnection_typeE, game_data_type::ARRAY);
+    handle_cmd_createConnectionConfig = host::register_sqf_command("dbCreateConnection", "TODO", Connection::cmd_createConnectionConfig, GameDataDBConnection_typeE, game_data_type::STRING);
+    handle_cmd_execute = host::register_sqf_command("dbExecute", "TODO", Connection::cmd_execute, Result::GameDataDBResult_typeE, GameDataDBConnection_typeE, Query::GameDataDBQuery_typeE);
+    handle_cmd_executeAsync = host::register_sqf_command("dbExecuteAsync", "TODO", Connection::cmd_executeAsync, Result::GameDataDBAsyncResult_typeE, GameDataDBConnection_typeE, Query::GameDataDBQuery_typeE);
 }

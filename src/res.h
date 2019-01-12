@@ -42,7 +42,7 @@ public:
     float get_as_number() const override { return 0.f; }
     const r_string& get_as_string() const override { static r_string nm("TODO"sv); return nm; }
     game_data* copy() const override { return new GameDataDBResult(*this); }
-    r_string to_string() const override { return r_string("TODO"sv); }
+    r_string to_string() const override { return r_string("Use the dbResult* commands to read me"sv); }
     //virtual bool equals(const game_data*) const override; //#TODO isEqualTo on hashMaps would be quite nice I guess?
     const char* type_as_string() const override { return "databaseResult"; }
     bool is_nil() const override { return false; }
@@ -80,7 +80,7 @@ public:
 
     bool get_as_bool() const override { return true; }
     float get_as_number() const override { return 0.f; }
-    const r_string& get_as_string() const override { static r_string nm("TODO"sv); return nm; }
+    const r_string& get_as_string() const override { static r_string nm("Use a callback or dbWaitForResult to get my result"sv); return nm; }
     game_data* copy() const override {
         return new GameDataDBAsyncResult(*this);
     } //#TODO can't do that dave

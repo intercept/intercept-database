@@ -3,6 +3,7 @@
 #include "res.h"
 #include "query.h"
 #include "connection.h"
+#include "yaml-cpp/exceptions.h"
 
 int intercept::api_version() { //This is required for the plugin to work.
     return 1;
@@ -16,18 +17,25 @@ void intercept::pre_start() {
     Result::initCommands();
     Query::initCommands();
     Connection::initCommands();
+    Config::initCommands();
 }
 
 void intercept::pre_init() {
-
-    //mysqlx::Session sess("localhost", 3306, "intercepttest", "password");
-    //
-    //auto db = sess.sql("USE ?").bind("databasename").execute();
-    //
-    //
-    //auto query = sess.sql("SELECT * FROM ?").bind("testdata");
-    //query.execute();
-
+    try {
+        Config::get().reloadConfig();
+    }
+    catch (YAML::BadConversion& x) {
+        sqf::diag_log ("Database config error " + x.msg + " in L" + std::to_string(x.mark.line));
+        sqf::system_chat("Database config error " + x.msg + " in L" + std::to_string(x.mark.line));
+    }
+    catch (std::runtime_error& x) {
+        sqf::diag_log(r_string("Database config error ") + x.what());
+        sqf::system_chat(r_string("Database config error ") + x.what());
+    }
+    catch (YAML::ParserException& x) {
+        sqf::diag_log("Database config error " + x.msg + " in L" + std::to_string(x.mark.line));
+        sqf::system_chat("Database config error " + x.msg + " in L" + std::to_string(x.mark.line));
+    }
 
     intercept::sqf::system_chat("Intercept database has been loaded");
 }

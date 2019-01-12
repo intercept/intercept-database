@@ -93,8 +93,7 @@ game_value Result::cmd_waitForResult(uintptr_t, game_value_parameter right) {
     return gd_res;
 }
 
-void ::Result::initCommands() {
-    
+void Result::initCommands() {
     auto dbType = host::register_sqf_type("DBRES"sv, "databaseResult"sv, "TODO"sv, "databaseResult"sv, createGameDataDBResult);
     GameDataDBResult_typeE = dbType.first;
     GameDataDBResult_type = dbType.second;
@@ -103,11 +102,9 @@ void ::Result::initCommands() {
     GameDataDBAsyncResult_typeE = dbTypeA.first;
     GameDataDBAsyncResult_type = dbTypeA.second;
 
-    handle_cmd_affectedRows = client::host::register_sqf_command("db_resultAffectedRows", "TODO", Result::cmd_affectedRows, game_data_type::SCALAR, GameDataDBResult_typeE);
-    handle_cmd_lastInsertId = client::host::register_sqf_command("db_resultLastInsertId", "TODO", Result::cmd_lastInsertId, game_data_type::SCALAR, GameDataDBResult_typeE);
-    handle_cmd_toArray = client::host::register_sqf_command("db_resultToArray", "TODO", Result::cmd_toArray, game_data_type::ARRAY, GameDataDBResult_typeE);
-    handle_cmd_bindCallback = client::host::register_sqf_command("db_bindCallback", "TODO", Result::cmd_bindCallback, game_data_type::NOTHING, GameDataDBAsyncResult_typeE, game_data_type::ARRAY);
-    handle_cmd_waitForResult = client::host::register_sqf_command("db_waitForResult", "TODO", Result::cmd_waitForResult, GameDataDBResult_typeE, GameDataDBAsyncResult_typeE);
-
-
+    handle_cmd_affectedRows = client::host::register_sqf_command("dbResultAffectedRows", "TODO", Result::cmd_affectedRows, game_data_type::SCALAR, GameDataDBResult_typeE);
+    handle_cmd_lastInsertId = client::host::register_sqf_command("dbResultLastInsertId", "TODO", Result::cmd_lastInsertId, game_data_type::SCALAR, GameDataDBResult_typeE);
+    handle_cmd_toArray = client::host::register_sqf_command("dbResultToArray", "TODO", Result::cmd_toArray, game_data_type::ARRAY, GameDataDBResult_typeE);
+    handle_cmd_bindCallback = client::host::register_sqf_command("dbBindCallback", "TODO", Result::cmd_bindCallback, game_data_type::NOTHING, GameDataDBAsyncResult_typeE, game_data_type::ARRAY);
+    handle_cmd_waitForResult = client::host::register_sqf_command("dbWaitForResult", "TODO", Result::cmd_waitForResult, GameDataDBResult_typeE, GameDataDBAsyncResult_typeE);
 }

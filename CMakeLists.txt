@@ -29,6 +29,16 @@ else()
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/build/win32/")
 endif()
 
+
+#yaml resets c++17 so I just move it above ours so we don't have to re-set
+SET(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "Don't want" FORCE)
+SET(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "Don't want" FORCE)
+SET(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "Don't want" FORCE)
+SET(YAML_CPP_INSTALL OFF CACHE BOOL "Don't want" FORCE)
+SET(MSVC_SHARED_RT OFF CACHE BOOL "want static" FORCE)
+
+add_subdirectory(yaml-cpp)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -53,7 +63,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 else()
 	set(CMAKE_CXX_FLAGS_DEBUG "/D_DEBUG /MTd /Zi /Ob0 /Od /RTC1 /MP /EHsc")
 	set(CMAKE_CXX_FLAGS_RELEASE "/MT /Zi /O2 /Ob1 /EHsc /MP") #with debug info
-    set(CMAKE_C_FLAGS_DEBUG "/D_DEBUG /MTd /Zi /Ob0 /Od /RTC1 /MP /EHsc")
+	set(CMAKE_C_FLAGS_DEBUG "/D_DEBUG /MTd /Zi /Ob0 /Od /RTC1 /MP /EHsc")
 	set(CMAKE_C_FLAGS_RELEASE "/MT /Zi /O2 /Ob1 /EHsc /MP") #with debug info
 	set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "/OPT:REF /DEBUG:FULL") 
 endif()
@@ -70,5 +80,11 @@ add_subdirectory(mariadbpp)
 
 include_directories(AFTER "${PROJECT_SOURCE_DIR}/mariadbpp/include")
 include_directories(AFTER "${PROJECT_SOURCE_DIR}/mariadb-connector-c/include")
+
+
+
+
+
+
 add_subdirectory(src)
 
