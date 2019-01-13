@@ -5,6 +5,10 @@
 #include "mariadb++/exceptions.hpp"
 #include <winsock2.h>
 #include "threading.h"
+#include "ittnotify.h"
+
+__itt_domain* domainConnection = __itt_domain_create("connection");
+
 
 using namespace intercept::client;
 
@@ -137,9 +141,6 @@ game_value Connection::cmd_execute(uintptr_t g , game_value_parameter con, game_
 
     auto gs = reinterpret_cast<game_state*>(g);
     
-
-   
-
     auto session = con.get_as<GameDataDBConnection>()->session;
     auto query = qu.get_as<GameDataDBQuery>();
 
@@ -208,8 +209,11 @@ game_value Connection::cmd_execute(uintptr_t g , game_value_parameter con, game_
     return 123;
 }
 
+__itt_string_handle* connection_cmd_executeAsync = __itt_string_handle_create("Connection::cmd_executeAsync");
+__itt_string_handle* connection_cmd_executeAsync_task = __itt_string_handle_create("Connection::cmd_executeAsync::task");
+
 game_value Connection::cmd_executeAsync(uintptr_t, game_value_parameter con, game_value_parameter qu) {
-    
+    __itt_task_begin(domainConnection, __itt_null, __itt_null, connection_cmd_executeAsync);
     auto session = con.get_as<GameDataDBConnection>()->session;
     auto query = qu.get_as<GameDataDBQuery>();
 
@@ -218,6 +222,7 @@ game_value Connection::cmd_executeAsync(uintptr_t, game_value_parameter con, gam
     gd_res->data->fut = Threading::get().pushTask(session,   
     [stmt = query->getQueryString(), boundV = query->boundValues, result = gd_res->data](mariadb::connection_ref con) -> bool
     {
+        __itt_task_begin(domainConnection, __itt_null, __itt_null, connection_cmd_executeAsync_task);
         try {
             auto statement = con->create_statement(stmt);
             uint32_t idx = 0;
@@ -230,15 +235,17 @@ game_value Connection::cmd_executeAsync(uintptr_t, game_value_parameter con, gam
                 }
             }
             result->res = statement->query();
+            __itt_task_end(domainConnection);
             return true;
         } catch (mariadb::exception::connection& x) {
             __debugbreak();
 
-
+            __itt_task_end(domainConnection);
             return false;
         }
     }, true);
     Threading::get().pushAsyncWork(gd_res);
+    __itt_task_end(domainConnection);
     return gd_res;
 }
 

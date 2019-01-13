@@ -5,6 +5,9 @@
 #include "connection.h"
 #include "yaml-cpp/exceptions.h"
 #include "threading.h"
+#include "ittnotify.h"
+
+__itt_domain* domainMain = __itt_domain_create("main");
 
 int intercept::api_version() { //This is required for the plugin to work.
     return 1;
@@ -41,19 +44,33 @@ void intercept::pre_init() {
     intercept::sqf::system_chat("Intercept database has been loaded");
 }
 void logMessageWithTime(std::string msg);
+
+
+__itt_string_handle* main_on_frame = __itt_string_handle_create("intercept::on_frame");
+__itt_string_handle* main_on_frame_callback = __itt_string_handle_create("intercept::on_frame::callback");
+extern __itt_counter counter;
 void intercept::on_frame() {
+    __itt_task_begin(domainMain, __itt_null, __itt_null, main_on_frame);
+    Threading::get().doCleanup();
     if (!Threading::get().hasCompletedAsyncWork) return;
 
     std::unique_lock l(Threading::get().asyncWorkMutex);
     for (auto& it : Threading::get().completedAsyncTasks) {
-        logMessageWithTime("task callback");
-        auto gd_res = new GameDataDBResult();
-        gd_res->res = it->data->res;
+        __itt_task_begin(domainMain, __itt_null, __itt_null, main_on_frame_callback);
 
-        sqf::call(it->data->callback, { gd_res, it->data->callbackArgs });
+        if (!it->data->callback.is_nil()) {
+            logMessageWithTime("task callback");
+            auto gd_res = new GameDataDBResult();
+            gd_res->res = it->data->res;
+
+            sqf::call(it->data->callback, { gd_res, it->data->callbackArgs });
+        }
+        __itt_counter_dec(counter);
+        __itt_task_end(domainMain);
     }
     Threading::get().hasCompletedAsyncWork = false;
     Threading::get().completedAsyncTasks.clear();
+    __itt_task_end(domainMain);
 }
 
 

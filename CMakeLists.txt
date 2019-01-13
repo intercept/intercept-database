@@ -80,6 +80,7 @@ add_subdirectory(mariadbpp)
 
 include_directories(AFTER "${PROJECT_SOURCE_DIR}/mariadbpp/include")
 include_directories(AFTER "${PROJECT_SOURCE_DIR}/mariadb-connector-c/include")
+include_directories(AFTER "${PROJECT_SOURCE_DIR}/ittnotify")
 
 
 
