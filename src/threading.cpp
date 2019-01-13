@@ -1,10 +1,12 @@
 #include "threading.h"
+#define INTEL_NO_ITTNOTIFY_API
 #include "ittnotify.h"
 using namespace std::chrono_literals;
 
 #include <iomanip> // put_time
 #include <windows.h>
 void logMessageWithTime(std::string msg) {
+    return;
     auto now = std::chrono::system_clock::now();
     auto in_time_t = std::chrono::system_clock::to_time_t(now);
 
@@ -46,7 +48,7 @@ void Worker::run() {
     __itt_task_begin(domain, __itt_null, __itt_null, worker_run);
     bool rememberUpdateWorklist = false;
 
-    auto counter = __itt_counter_create("tasksToDo", "worker");
+    __itt_counter counter = __itt_counter_create("tasksToDo", "worker");
 
 
     while (true) {

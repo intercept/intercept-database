@@ -5,6 +5,7 @@
 #include "mariadb++/exceptions.hpp"
 #include <winsock2.h>
 #include "threading.h"
+#define INTEL_NO_ITTNOTIFY_API
 #include "ittnotify.h"
 
 __itt_domain* domainConnection = __itt_domain_create("connection");
