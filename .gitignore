@@ -52,3 +52,5 @@ CTestTestfile.cmake
 
 # JetBrains
 .idea/
+
+CMakeSettings\.json
