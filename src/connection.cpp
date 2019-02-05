@@ -5,7 +5,6 @@
 #include "mariadb++/exceptions.hpp"
 #include <winsock2.h>
 #include "threading.h"
-#define INTEL_NO_ITTNOTIFY_API
 #include "ittnotify.h"
 
 __itt_domain* domainConnection = __itt_domain_create("connection");
@@ -64,7 +63,7 @@ game_data* createGameDataDBConnection(param_archive* ar) {
     return x;
 }
 
-game_value Connection::cmd_createConnectionArray(uintptr_t, game_value_parameter right) {
+game_value Connection::cmd_createConnectionArray(game_state&, game_value_parameter right) {
     //#TODO error checking
     r_string ip = right[0];
     int port = right[1];
@@ -82,7 +81,7 @@ game_value Connection::cmd_createConnectionArray(uintptr_t, game_value_parameter
     return newCon;
 }
 
-game_value Connection::cmd_createConnectionConfig(uintptr_t, game_value_parameter right) {
+game_value Connection::cmd_createConnectionConfig(game_state&, game_value_parameter right) {
     
     auto acc = Config::get().getAccount(right);
     if (!acc) return  {};
@@ -119,7 +118,7 @@ public:
             //push result onto stack.
             auto gd_res = new GameDataDBResult();
             gd_res->res = res->data->res;
-            s->current_context->scriptStack[_stackEndAtStart] = game_value(gd_res);
+            s->get_vm_context()->scriptStack[_stackEndAtStart] = game_value(gd_res);
             d1 = 2; //done
         } else {
             d1 = 3; //wait
@@ -138,14 +137,11 @@ public:
 
 };
 
-game_value Connection::cmd_execute(uintptr_t g , game_value_parameter con, game_value_parameter qu) {
-
-    auto gs = reinterpret_cast<game_state*>(g);
-    
+game_value Connection::cmd_execute(game_state& gs, game_value_parameter con, game_value_parameter qu) {
     auto session = con.get_as<GameDataDBConnection>()->session;
     auto query = qu.get_as<GameDataDBQuery>();
 
-    if (!gs->current_context->scheduled) {
+    if (!gs.get_vm_context()->is_scheduled()) {
 
         auto statement = session->create_statement(query->getQueryString());
 
@@ -169,7 +165,7 @@ game_value Connection::cmd_execute(uintptr_t g , game_value_parameter con, game_
     }
     //Set up callstack item to suspend while waiting
 
-    auto& cs = reinterpret_cast<game_state*>(g)->current_context->callstack;
+    auto& cs = gs.get_vm_context()->callstack;
 
     auto gd_res = new GameDataDBAsyncResult();
     gd_res->data = std::make_shared<GameDataDBAsyncResult::dataT>();
@@ -203,7 +199,7 @@ game_value Connection::cmd_execute(uintptr_t g , game_value_parameter con, game_
 
     auto newItem = new callstack_item_WaitForQueryResult(gd_res);
     newItem->_parent = cs.back();
-    newItem->_stackEndAtStart = gs->current_context->scriptStack.size()-2;
+    newItem->_stackEndAtStart = gs.get_vm_context()->scriptStack.size()-2;
     newItem->_stackEnd = newItem->_stackEndAtStart+1;
     newItem->_varSpace.parent = &cs.back()->_varSpace;
     cs.emplace_back(newItem);
@@ -213,7 +209,7 @@ game_value Connection::cmd_execute(uintptr_t g , game_value_parameter con, game_
 __itt_string_handle* connection_cmd_executeAsync = __itt_string_handle_create("Connection::cmd_executeAsync");
 __itt_string_handle* connection_cmd_executeAsync_task = __itt_string_handle_create("Connection::cmd_executeAsync::task");
 
-game_value Connection::cmd_executeAsync(uintptr_t, game_value_parameter con, game_value_parameter qu) {
+game_value Connection::cmd_executeAsync(game_state&, game_value_parameter con, game_value_parameter qu) {
     __itt_task_begin(domainConnection, __itt_null, __itt_null, connection_cmd_executeAsync);
     auto session = con.get_as<GameDataDBConnection>()->session;
     auto query = qu.get_as<GameDataDBQuery>();

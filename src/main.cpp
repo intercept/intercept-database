@@ -29,7 +29,7 @@ void intercept::pre_init() {
         Config::get().reloadConfig();
     }
     catch (YAML::BadConversion& x) {
-        sqf::diag_log ("Database config error " + x.msg + " in L" + std::to_string(x.mark.line));
+        sqf::diag_log("Database config error " + x.msg + " in L" + std::to_string(x.mark.line));
         sqf::system_chat("Database config error " + x.msg + " in L" + std::to_string(x.mark.line));
     }
     catch (std::runtime_error& x) {

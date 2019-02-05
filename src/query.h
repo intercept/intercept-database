@@ -7,18 +7,18 @@ using namespace intercept::types;
 class Query {
 public:
 
-    static game_value cmd_prepareQuery(uintptr_t, game_value_parameter right);
-    static game_value cmd_prepareQueryAr(uintptr_t, game_value_parameter right);
-    static game_value cmd_prepareQueryConfig(uintptr_t, game_value_parameter right);
-    static game_value cmd_prepareQueryConfigAr(uintptr_t, game_value_parameter right);
+    static game_value cmd_prepareQuery(game_state&, game_value_parameter right);
+    static game_value cmd_prepareQueryAr(game_state&, game_value_parameter right);
+    static game_value cmd_prepareQueryConfig(game_state&, game_value_parameter right);
+    static game_value cmd_prepareQueryConfigAr(game_state&, game_value_parameter right);
 
 
 
-    static game_value cmd_copyQuery(uintptr_t, game_value_parameter right);
-	static game_value cmd_bindValue(uintptr_t, game_value_parameter left, game_value_parameter right);
-	static game_value cmd_bindValueArray(uintptr_t, game_value_parameter left, game_value_parameter right);
-	static game_value cmd_bindNamedValue(uintptr_t, game_value_parameter left, game_value_parameter right);
-	static game_value cmd_bindNamedValueArray(uintptr_t, game_value_parameter left, game_value_parameter right);
+    static game_value cmd_copyQuery(game_state&, game_value_parameter right);
+	static game_value cmd_bindValue(game_state&, game_value_parameter left, game_value_parameter right);
+	static game_value cmd_bindValueArray(game_state&, game_value_parameter left, game_value_parameter right);
+	static game_value cmd_bindNamedValue(game_state&, game_value_parameter left, game_value_parameter right);
+	static game_value cmd_bindNamedValueArray(game_state&, game_value_parameter left, game_value_parameter right);
 
 
 

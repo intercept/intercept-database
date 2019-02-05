@@ -10,11 +10,11 @@ using namespace intercept::types;
 class Result {
 public:
 
-	static game_value cmd_affectedRows(uintptr_t, game_value_parameter right);
-	static game_value cmd_lastInsertId(uintptr_t, game_value_parameter right);
-    static game_value cmd_toArray(uintptr_t, game_value_parameter right);
-    static game_value cmd_bindCallback(uintptr_t, game_value_parameter left, game_value_parameter right);
-    static game_value cmd_waitForResult(uintptr_t, game_value_parameter right);
+	static game_value cmd_affectedRows(game_state&, game_value_parameter right);
+	static game_value cmd_lastInsertId(game_state&, game_value_parameter right);
+    static game_value cmd_toArray(game_state&, game_value_parameter right);
+    static game_value cmd_bindCallback(game_state&, game_value_parameter left, game_value_parameter right);
+    static game_value cmd_waitForResult(game_state&, game_value_parameter right);
 
 	static void initCommands();
 	static inline sqf_script_type GameDataDBResult_type;

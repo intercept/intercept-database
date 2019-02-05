@@ -18,19 +18,19 @@ game_data* createGameDataDBAsyncResult(param_archive* ar) {
     return x;
 }
 
-game_value Result::cmd_affectedRows(uintptr_t, game_value_parameter right) {
+game_value Result::cmd_affectedRows(game_state&, game_value_parameter right) {
     auto& res = right.get_as<GameDataDBResult>()->res;
 
     return res->row_count();
 }
 
-game_value Result::cmd_lastInsertId(uintptr_t, game_value_parameter right) {
+game_value Result::cmd_lastInsertId(game_state&, game_value_parameter right) {
     auto& res = right.get_as<GameDataDBResult>()->res;
 
     return res->get_last_insert_id();
 }
 
-game_value Result::cmd_toArray(uintptr_t, game_value_parameter right) {
+game_value Result::cmd_toArray(game_state&, game_value_parameter right) {
     auto& res = right.get_as<GameDataDBResult>()->res;
     if (!res) return auto_array<game_value>();
     auto_array<game_value> result;
@@ -67,7 +67,7 @@ game_value Result::cmd_toArray(uintptr_t, game_value_parameter right) {
 	return result;
 }
 
-game_value Result::cmd_bindCallback(uintptr_t, game_value_parameter left, game_value_parameter right) {
+game_value Result::cmd_bindCallback(game_state&, game_value_parameter left, game_value_parameter right) {
     auto& res = left.get_as<GameDataDBAsyncResult>();
 
     res->data->callback = right[0];
@@ -75,7 +75,7 @@ game_value Result::cmd_bindCallback(uintptr_t, game_value_parameter left, game_v
     return {};
 }
 
-game_value Result::cmd_waitForResult(uintptr_t, game_value_parameter right) {
+game_value Result::cmd_waitForResult(game_state&, game_value_parameter right) {
     auto& res = right.get_as<GameDataDBAsyncResult>();
 
     res->data->fut.wait();

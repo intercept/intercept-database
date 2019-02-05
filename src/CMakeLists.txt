@@ -38,7 +38,14 @@ file(GLOB INTERCEPT_HOST_SOURCES "${INTERCEPT_CLIENT_PATH}/intercept/client/*.cp
 SOURCE_GROUP("intercept" FILES ${INTERCEPT_HOST_SOURCES})
 
 add_library(${INTERCEPT_PLUGIN_NAME} SHARED ${INTERCEPT_PLUGIN_SOURCES} ${INTERCEPT_HOST_SOURCES})
-find_library(libittnotify libittnotify)
+
+if(ITT_INSTRUMENTATION)
+	find_library(libittnotify NAMES ittnotify PATHS ${CMAKE_SOURCE_DIR}/ittnotify NO_DEFAULT_PATH)
+else()
+	set(libittnotify "")
+	add_compile_definitions(INTEL_NO_ITTNOTIFY_API)
+endif()
+
 
 target_link_libraries(${INTERCEPT_PLUGIN_NAME} mariadbclientpp yaml-cpp ${libittnotify})
 

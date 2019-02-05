@@ -1,5 +1,4 @@
 #include "threading.h"
-#define INTEL_NO_ITTNOTIFY_API
 #include "ittnotify.h"
 using namespace std::chrono_literals;
 

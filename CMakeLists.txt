@@ -54,6 +54,7 @@ SET(STATIC_MSVCRT ON CACHE BOOL "force static lib" FORCE)
 
 SET(WITH_UNIT_TESTS OFF CACHE BOOL "no mysql tests" FORCE)
 set(WITH_SSL "OFF" CACHE STRING "Disabled for now" FORCE)
+set(WITH_CURL OFF CACHE BOOL "not cuurl" FORCE)
 #TODO test with wolfssl
 
 if(CMAKE_COMPILER_IS_GNUCXX)

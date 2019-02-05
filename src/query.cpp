@@ -12,7 +12,7 @@ game_data* createGameDataDBQuery(param_archive* ar) {
 }
 
 
-game_value Query::cmd_prepareQuery(uintptr_t, game_value_parameter right) {
+game_value Query::cmd_prepareQuery(game_state&, game_value_parameter right) {
 
     auto query = new GameDataDBQuery();
 
@@ -21,7 +21,7 @@ game_value Query::cmd_prepareQuery(uintptr_t, game_value_parameter right) {
     return query;
 }
 
-game_value Query::cmd_prepareQueryAr(uintptr_t, game_value_parameter right) {
+game_value Query::cmd_prepareQueryAr(game_state&, game_value_parameter right) {
     auto query = new GameDataDBQuery();
     //#TODO verify that right has 2 entries
     query->queryString = right[0];
@@ -31,7 +31,7 @@ game_value Query::cmd_prepareQueryAr(uintptr_t, game_value_parameter right) {
 
     return query;
 }
-game_value Query::cmd_prepareQueryConfig(uintptr_t, game_value_parameter right) {
+game_value Query::cmd_prepareQueryConfig(game_state&, game_value_parameter right) {
     if (Config::get().getQuery(right).empty()) return {};
 
     auto query = new GameDataDBQuery();
@@ -41,7 +41,7 @@ game_value Query::cmd_prepareQueryConfig(uintptr_t, game_value_parameter right) 
 
     return query;
 }
-game_value Query::cmd_prepareQueryConfigAr(uintptr_t, game_value_parameter right) {
+game_value Query::cmd_prepareQueryConfigAr(game_state&, game_value_parameter right) {
     if (Config::get().getQuery(right[0]).empty()) return {};
 
     auto query = new GameDataDBQuery();
@@ -56,7 +56,7 @@ game_value Query::cmd_prepareQueryConfigAr(uintptr_t, game_value_parameter right
     return query;
 }
 
-game_value Query::cmd_copyQuery(uintptr_t, game_value_parameter right) {
+game_value Query::cmd_copyQuery(game_state&, game_value_parameter right) {
     auto inp = right.get_as<GameDataDBQuery>();
 
     auto query = new GameDataDBQuery();
@@ -68,13 +68,13 @@ game_value Query::cmd_copyQuery(uintptr_t, game_value_parameter right) {
     return query;
 }
 
-game_value Query::cmd_bindValue(uintptr_t, game_value_parameter left, game_value_parameter right) {
+game_value Query::cmd_bindValue(game_state&, game_value_parameter left, game_value_parameter right) {
     auto query = left.get_as<GameDataDBQuery>();
 
     query->boundValues.emplace_back(right);
     return {};
 }
-game_value Query::cmd_bindValueArray(uintptr_t, game_value_parameter left, game_value_parameter right) {
+game_value Query::cmd_bindValueArray(game_state&, game_value_parameter left, game_value_parameter right) {
     auto query = left.get_as<GameDataDBQuery>();
 
     for (auto& it : right.to_array())
@@ -82,10 +82,10 @@ game_value Query::cmd_bindValueArray(uintptr_t, game_value_parameter left, game_
 
     return {};
 }
-game_value Query::cmd_bindNamedValue(uintptr_t, game_value_parameter left, game_value_parameter right) {
+game_value Query::cmd_bindNamedValue(game_state&, game_value_parameter left, game_value_parameter right) {
     return {};
 }
-game_value Query::cmd_bindNamedValueArray(uintptr_t, game_value_parameter left, game_value_parameter right) {
+game_value Query::cmd_bindNamedValueArray(game_state&, game_value_parameter left, game_value_parameter right) {
     return {};
 }
 

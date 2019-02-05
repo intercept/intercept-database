@@ -8,10 +8,10 @@ using namespace intercept::types;
 class Connection {
 public:
 
-    static game_value cmd_createConnectionArray(uintptr_t, game_value_parameter right);
-    static game_value cmd_createConnectionConfig(uintptr_t, game_value_parameter right);
-    static game_value cmd_execute(uintptr_t, game_value_parameter con, game_value_parameter qu);
-    static game_value cmd_executeAsync(uintptr_t, game_value_parameter con, game_value_parameter qu);
+    static game_value cmd_createConnectionArray(game_state&, game_value_parameter right);
+    static game_value cmd_createConnectionConfig(game_state&, game_value_parameter right);
+    static game_value cmd_execute(game_state&, game_value_parameter con, game_value_parameter qu);
+    static game_value cmd_executeAsync(game_state&, game_value_parameter con, game_value_parameter qu);
 
 
 

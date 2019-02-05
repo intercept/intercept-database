@@ -65,7 +65,7 @@ void Config::reloadConfig() {
 }
 
 
-game_value cmd_reloadConfig(uintptr_t) {
+game_value cmd_reloadConfig(game_state&) {
 
 
 
