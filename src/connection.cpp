@@ -190,8 +190,9 @@ game_value Connection::cmd_execute(game_state& gs, game_value_parameter con, gam
             return true;
         }
         catch (mariadb::exception::connection& x) {
-            __debugbreak();
-
+            auto exText = r_string("Intercept-DB exception ") + x.what() + "\nat\n" + stmt;
+            invoker_lock l();
+            sqf::diag_log(exText);
 
             return false;
         }
@@ -235,7 +236,9 @@ game_value Connection::cmd_executeAsync(game_state&, game_value_parameter con, g
             __itt_task_end(domainConnection);
             return true;
         } catch (mariadb::exception::connection& x) {
-            __debugbreak();
+            auto exText = r_string("Intercept-DB exception ") + x.what() + "\nat\n" + stmt;
+            invoker_lock l();
+            sqf::diag_log(exText);
 
             __itt_task_end(domainConnection);
             return false;

@@ -75,11 +75,11 @@ game_value cmd_reloadConfig(game_state&) {
     catch (YAML::BadConversion& x) {
         return "error " + x.msg + " in L" + std::to_string(x.mark.line);
     }
+    catch (YAML::ParserException & x) {
+        return "error " + x.msg + " in L" + std::to_string(x.mark.line);
+    }
     catch (std::runtime_error& x) {
         return r_string("error ") + x.what();
-    }
-    catch (YAML::ParserException& x) {
-      return "error " + x.msg + " in L" + std::to_string(x.mark.line);
     }
     return {};
 }
