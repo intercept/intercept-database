@@ -12,6 +12,7 @@ public:
     static game_value cmd_createConnectionConfig(game_state&, game_value_parameter right);
     static game_value cmd_execute(game_state&, game_value_parameter con, game_value_parameter qu);
     static game_value cmd_executeAsync(game_state&, game_value_parameter con, game_value_parameter qu);
+    static game_value cmd_ping(game_state&, game_value_parameter con);
 
 
 
@@ -25,4 +26,5 @@ public:
     static inline types::registered_sqf_function handle_cmd_createConnectionConfig;
     static inline types::registered_sqf_function handle_cmd_execute;
     static inline types::registered_sqf_function handle_cmd_executeAsync;
+    static inline types::registered_sqf_function handle_cmd_ping;
 };

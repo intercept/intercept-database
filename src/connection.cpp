@@ -249,6 +249,17 @@ game_value Connection::cmd_executeAsync(game_state&, game_value_parameter con, g
     return gd_res;
 }
 
+game_value Connection::cmd_ping(game_state&, game_value_parameter con) {
+    try {
+        auto session = con.get_as<GameDataDBConnection>()->session;
+        return session->query("SELECT 1;"sv)->get_signed8(0) == 1;
+    } catch (mariadb::exception::connection& x) {
+        auto exText = r_string("Intercept-DB ping exception ") + x.what();
+        sqf::diag_log(exText);
+        return false;
+    }
+}
+
 void Connection::initCommands() {
     
     auto dbType = host::register_sqf_type("DBCON"sv, "databaseConnection"sv, "TODO"sv, "databaseConnection"sv, createGameDataDBConnection);
@@ -260,4 +271,5 @@ void Connection::initCommands() {
     handle_cmd_createConnectionConfig = host::register_sqf_command("dbCreateConnection", "TODO", Connection::cmd_createConnectionConfig, GameDataDBConnection_typeE, game_data_type::STRING);
     handle_cmd_execute = host::register_sqf_command("dbExecute", "TODO", Connection::cmd_execute, Result::GameDataDBResult_typeE, GameDataDBConnection_typeE, Query::GameDataDBQuery_typeE);
     handle_cmd_executeAsync = host::register_sqf_command("dbExecuteAsync", "TODO", Connection::cmd_executeAsync, Result::GameDataDBAsyncResult_typeE, GameDataDBConnection_typeE, Query::GameDataDBQuery_typeE);
+    handle_cmd_ping = host::register_sqf_command("dbPing", "TODO", Connection::cmd_ping, game_data_type::ARRAY, GameDataDBConnection_typeE);
 }
