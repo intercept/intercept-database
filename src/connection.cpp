@@ -260,6 +260,11 @@ game_value Connection::cmd_ping(game_state&, game_value_parameter con) {
     }
 }
 
+game_value Connection::cmd_isConnected(game_state&, game_value_parameter con) {
+    auto session = con.get_as<GameDataDBConnection>()->session;
+    return session && session->connected();
+}
+
 void Connection::initCommands() {
     
     auto dbType = host::register_sqf_type("DBCON"sv, "databaseConnection"sv, "TODO"sv, "databaseConnection"sv, createGameDataDBConnection);
@@ -272,4 +277,5 @@ void Connection::initCommands() {
     handle_cmd_execute = host::register_sqf_command("dbExecute", "TODO", Connection::cmd_execute, Result::GameDataDBResult_typeE, GameDataDBConnection_typeE, Query::GameDataDBQuery_typeE);
     handle_cmd_executeAsync = host::register_sqf_command("dbExecuteAsync", "TODO", Connection::cmd_executeAsync, Result::GameDataDBAsyncResult_typeE, GameDataDBConnection_typeE, Query::GameDataDBQuery_typeE);
     handle_cmd_ping = host::register_sqf_command("dbPing", "TODO", Connection::cmd_ping, game_data_type::ARRAY, GameDataDBConnection_typeE);
+    handle_cmd_isConnected = host::register_sqf_command("dbIsConnected", "TODO", Connection::cmd_isConnected, game_data_type::ARRAY, GameDataDBConnection_typeE);
 }
