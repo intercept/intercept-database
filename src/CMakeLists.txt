@@ -65,3 +65,12 @@ else()
 	set(CMAKE_C_FLAGS_RELEASE "/MT /Zi /O2 /Ob1 /EHsc /MP") #with debug info
 	target_link_options(${INTERCEPT_PLUGIN_NAME} PRIVATE "/OPT:REF" "/OPT:ICF" "/DEBUG:FULL")
 endif()
+
+#Binary signing
+if(EXISTS "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/sign.bat" AND MSVC)
+	add_custom_command(TARGET ${INTERCEPT_PLUGIN_NAME}
+		POST_BUILD
+		COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/sign.bat
+		WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+	)
+endif()
