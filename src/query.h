@@ -48,9 +48,9 @@ public:
 
     bool get_as_bool() const override { return true; }
     float get_as_number() const override { return 0.f; }
-    const r_string& get_as_string() const override { static r_string nm("TODO"sv); return nm; }
+    const r_string& get_as_string() const override { return getQueryString(); }
     game_data* copy() const override { return new GameDataDBQuery(*this); } //#TODO make sure this works
-    r_string to_string() const override { return r_string("TODO"sv); }
+    r_string to_string() const override { return getQueryString(); }
     //virtual bool equals(const game_data*) const override; //#TODO isEqualTo on hashMaps would be quite nice I guess?
     const char* type_as_string() const override { return "databaseQuery"; }
     bool is_nil() const override { return false; }
@@ -75,7 +75,7 @@ public:
         return serialization_return::no_error;
     }
 
-    r_string getQueryString() {
+    r_string getQueryString() const {
         if (isConfigQuery) {
             auto gotQuery = Config::get().getQuery(queryString);
             if (!gotQuery.empty()) return gotQuery;
