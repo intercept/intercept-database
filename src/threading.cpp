@@ -210,6 +210,13 @@ void Threading::doCleanup() {
     __itt_task_end(domain);
 }
 
+bool Threading::isConnected(mariadb::account_ref acc) {
+    auto found = workers.find(acc);
+    if (found == workers.end()) return false;
+    //#TODO potentially not threadsafe
+    return found->second->workerConnection->connected();
+}
+
 void Threading::pushAsyncWork(ref<GameDataDBAsyncResult> work) {
     //std::unique_lock l(asyncWorkMutex);
     //Only called from main thread

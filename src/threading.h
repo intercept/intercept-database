@@ -49,7 +49,7 @@ public:
     Threading() : lastCleanup(std::chrono::system_clock::now()) {}
     std::future<bool> pushTask(mariadb::connection_ref con, std::function<bool(mariadb::connection_ref)> task, bool intoWorkList = false);
     void doCleanup();
-
+    bool isConnected(mariadb::account_ref acc);
 
     std::map<mariadb::account_ref, std::shared_ptr<Worker>> workers;
     std::chrono::system_clock::time_point lastCleanup;

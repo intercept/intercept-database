@@ -262,7 +262,7 @@ game_value Connection::cmd_ping(game_state&, game_value_parameter con) {
 
 game_value Connection::cmd_isConnected(game_state&, game_value_parameter con) {
     auto session = con.get_as<GameDataDBConnection>()->session;
-    return session && session->connected();
+    return session && (session->connected() || Threading::get().isConnected(session->account()));
 }
 
 void Connection::initCommands() {
