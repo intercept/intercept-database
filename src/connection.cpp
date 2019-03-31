@@ -306,7 +306,7 @@ void Connection::initCommands() {
     handle_cmd_executeAsync = host::register_sqf_command("dbExecuteAsync", "TODO", Connection::cmd_executeAsync, Result::GameDataDBAsyncResult_typeE, GameDataDBConnection_typeE, Query::GameDataDBQuery_typeE);
     handle_cmd_ping = host::register_sqf_command("dbPing", "TODO", Connection::cmd_ping, game_data_type::BOOL, GameDataDBConnection_typeE);
     handle_cmd_isConnected = host::register_sqf_command("dbIsConnected", "TODO", Connection::cmd_isConnected, game_data_type::BOOL, GameDataDBConnection_typeE);
-    handle_cmd_addErrorHandler = host::register_sqf_command("dbIsConnected", "TODO", Connection::cmd_addErrorHandler, game_data_type::ARRAY, GameDataDBConnection_typeE, game_data_type::CODE);
+    handle_cmd_addErrorHandler = host::register_sqf_command("dbAddErrorHandler", "TODO", Connection::cmd_addErrorHandler, game_data_type::NOTHING, GameDataDBConnection_typeE, game_data_type::CODE);
 
 
 

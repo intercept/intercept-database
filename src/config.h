@@ -24,6 +24,7 @@ public:
 
     static void initCommands();
     static inline registered_sqf_function handle_cmd_reloadConfig;
+    static inline registered_sqf_function handle_cmd_version;
 
 private:
     std::map<intercept::types::r_string, mariadb::account_ref> accounts;
