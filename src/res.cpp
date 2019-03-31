@@ -39,7 +39,6 @@ game_value Result::cmd_toArray(game_state&, game_value_parameter right) {
         auto_array<game_value> row;
 
         for (size_t i = 0u; i < res->column_count(); ++i) {
-
             switch (res->column_type(i)) {
                 case mariadb::value::null: row.emplace_back(game_value{}); break;
                 case mariadb::value::date: row.emplace_back(res->get_date(i).str()); break;
@@ -60,7 +59,7 @@ game_value Result::cmd_toArray(game_state&, game_value_parameter right) {
                 case mariadb::value::double64: row.emplace_back(static_cast<float>(res->get_double(i))); break;
                 case mariadb::value::enumeration: row.emplace_back(res->get_string(i)); break;
                 default: ;
-            }            
+            }
         }
         result.emplace_back(std::move(row));
     }

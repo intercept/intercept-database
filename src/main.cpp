@@ -58,7 +58,7 @@ void intercept::on_frame() {
     for (auto& it : Threading::get().completedAsyncTasks) {
         __itt_task_begin(domainMain, __itt_null, __itt_null, main_on_frame_callback);
 
-        if (!it->data->callback.is_nil()) {
+        if (!it->data->callback.is_nil() && it->data->res) {
             logMessageWithTime("task callback");
             auto gd_res = new GameDataDBResult();
             gd_res->res = it->data->res;

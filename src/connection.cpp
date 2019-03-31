@@ -157,7 +157,7 @@ game_value Connection::cmd_execute(game_state& gs, game_value_parameter con, gam
         }
 
         auto res = statement->query();
-
+        //#TODO handle error in create_statement and in query()
         auto gd_res = new GameDataDBResult();
         gd_res->res = res;
 
@@ -190,9 +190,18 @@ game_value Connection::cmd_execute(game_state& gs, game_value_parameter con, gam
             return true;
         }
         catch (mariadb::exception::connection& x) {
-            auto exText = r_string("Intercept-DB exception ") + x.what() + "\nat\n" + stmt;
-            invoker_lock l();
-            sqf::diag_log(exText);
+            invoker_lock l;
+            if (con->account()->hasErrorHandler()) {
+                for (auto& it : con->account()->getErrorHandlers()) {
+
+                    auto res = sqf::call(it, { static_cast<r_string>(x.what()), static_cast<size_t>(x.error_id()), stmt });
+
+                    if (res.type_enum() == game_data_type::BOOL && static_cast<bool>(res)) break; //If returned true then error was handled.
+                }
+            } else {
+                auto exText = r_string("Intercept-DB exception ") + x.what() + "\nat\n" + stmt;
+                sqf::diag_log(exText);
+            }
 
             return false;
         }
@@ -236,9 +245,20 @@ game_value Connection::cmd_executeAsync(game_state&, game_value_parameter con, g
             __itt_task_end(domainConnection);
             return true;
         } catch (mariadb::exception::connection& x) {
-            auto exText = r_string("Intercept-DB exception ") + x.what() + "\nat\n" + stmt;
-            invoker_lock l();
-            sqf::diag_log(exText);
+            invoker_lock l;
+            if (con->account()->hasErrorHandler()) {
+                for (auto& it : con->account()->getErrorHandlers()) {
+                    
+                    auto res = sqf::call(it, { static_cast<r_string>(x.what()), static_cast<size_t>(x.error_id()), stmt });
+
+                    if (res.type_enum() == game_data_type::BOOL && static_cast<bool>(res)) break; //If returned true then error was handled.
+                }
+            } else {
+                auto exText = r_string("Intercept-DB exception ") + x.what() + "\nat\n" + stmt;
+                sqf::diag_log(exText);
+            }
+
+            
 
             __itt_task_end(domainConnection);
             return false;
@@ -265,6 +285,14 @@ game_value Connection::cmd_isConnected(game_state&, game_value_parameter con) {
     return session && (session->connected() || Threading::get().isConnected(session->account()));
 }
 
+game_value Connection::cmd_addErrorHandler(game_state&, game_value_parameter con, game_value_parameter handler) {
+    auto session = con.get_as<GameDataDBConnection>()->session;
+    if (!session) return {};
+
+    session->account()->addErrorHandler(handler);
+    return {};
+}
+
 void Connection::initCommands() {
     
     auto dbType = host::register_sqf_type("DBCON"sv, "databaseConnection"sv, "TODO"sv, "databaseConnection"sv, createGameDataDBConnection);
@@ -276,6 +304,10 @@ void Connection::initCommands() {
     handle_cmd_createConnectionConfig = host::register_sqf_command("dbCreateConnection", "TODO", Connection::cmd_createConnectionConfig, GameDataDBConnection_typeE, game_data_type::STRING);
     handle_cmd_execute = host::register_sqf_command("dbExecute", "TODO", Connection::cmd_execute, Result::GameDataDBResult_typeE, GameDataDBConnection_typeE, Query::GameDataDBQuery_typeE);
     handle_cmd_executeAsync = host::register_sqf_command("dbExecuteAsync", "TODO", Connection::cmd_executeAsync, Result::GameDataDBAsyncResult_typeE, GameDataDBConnection_typeE, Query::GameDataDBQuery_typeE);
-    handle_cmd_ping = host::register_sqf_command("dbPing", "TODO", Connection::cmd_ping, game_data_type::ARRAY, GameDataDBConnection_typeE);
-    handle_cmd_isConnected = host::register_sqf_command("dbIsConnected", "TODO", Connection::cmd_isConnected, game_data_type::ARRAY, GameDataDBConnection_typeE);
+    handle_cmd_ping = host::register_sqf_command("dbPing", "TODO", Connection::cmd_ping, game_data_type::BOOL, GameDataDBConnection_typeE);
+    handle_cmd_isConnected = host::register_sqf_command("dbIsConnected", "TODO", Connection::cmd_isConnected, game_data_type::BOOL, GameDataDBConnection_typeE);
+    handle_cmd_addErrorHandler = host::register_sqf_command("dbIsConnected", "TODO", Connection::cmd_addErrorHandler, game_data_type::ARRAY, GameDataDBConnection_typeE, game_data_type::CODE);
+
+
+
 }
