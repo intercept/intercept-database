@@ -58,7 +58,7 @@ void Config::reloadConfig() {
 
     for (auto& it : config["statements"]) {
         r_string stmtName = it.first.as<r_string>();
-        statements[stmtName] = it.second.as<r_string>();        
+        statements[stmtName] = it.second.as<r_string>();
     }
 
 
