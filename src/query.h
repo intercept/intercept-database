@@ -48,7 +48,7 @@ public:
 
     bool get_as_bool() const override { return true; }
     float get_as_number() const override { return 0.f; }
-    const r_string& get_as_string() const override { return getQueryString(); }
+    const r_string& get_as_string() const override { static r_string nm("TODO"sv); return nm; }
     game_data* copy() const override { return new GameDataDBQuery(*this); } //#TODO make sure this works
     r_string to_string() const override { return getQueryString(); }
     //virtual bool equals(const game_data*) const override; //#TODO isEqualTo on hashMaps would be quite nice I guess?
