@@ -272,7 +272,8 @@ game_value Connection::cmd_executeAsync(game_state&, game_value_parameter con, g
 game_value Connection::cmd_ping(game_state&, game_value_parameter con) {
     try {
         auto session = con.get_as<GameDataDBConnection>()->session;
-        return session->query("SELECT 1;"sv)->get_signed8(0) == 1;
+        auto result = session->query("SELECT 1;"sv);
+        return result->next() && result->get_signed8(0) == 1;
     } catch (mariadb::exception::connection& x) {
         auto exText = r_string("Intercept-DB ping exception ") + x.what();
         sqf::diag_log(exText);
