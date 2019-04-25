@@ -21,16 +21,36 @@ game_value Query::cmd_prepareQuery(game_state&, game_value_parameter right) {
     return query;
 }
 
-game_value Query::cmd_prepareQueryAr(game_state&, game_value_parameter right) {
+game_value Query::cmd_prepareQueryAr(game_state& gs, game_value_parameter right) {
+    if (right.size() < 1) {
+         gs.set_script_error(game_state::game_evaluator::evaluator_error_type::dim, 
+                "Not enough arguments provided, expected 2 but got 0"sv);
+        //No need to tell user that one argument is technically possible, should just use non array variant.
+    }
+
     auto query = new GameDataDBQuery();
-    //#TODO verify that right has 2 entries
     query->queryString = right[0];
 
-    for (auto& it : right[1].to_array())
-        query->boundValues.emplace_back(it);
+    if (right.size() == 1) return query;
+
+    //user didn't pass array although we are only supposed to take array
+    //but instead of erroring we can just handle it.
+    if (right[1].type_enum() != game_data_type::ARRAY) {
+          query->boundValues.emplace_back(right[1]);
+
+          if (right.size() > 2) {
+              //User might be trying something like dbPrepareQuery ["foostmt", "huhu", "haha", "hihi"]
+              //Warn him that it's wrong.
+              gs.set_script_error(game_state::game_evaluator::evaluator_error_type::dim, 
+                "Too many arguments provided. bindValues parameter is supposed to be array."sv);
+          }
+    } else
+        for (auto& it : right[1].to_array())
+            query->boundValues.emplace_back(it);
 
     return query;
 }
+
 game_value Query::cmd_prepareQueryConfig(game_state&, game_value_parameter right) {
     if (Config::get().getQuery(right).empty()) return {};
 
@@ -41,17 +61,35 @@ game_value Query::cmd_prepareQueryConfig(game_state&, game_value_parameter right
 
     return query;
 }
-game_value Query::cmd_prepareQueryConfigAr(game_state&, game_value_parameter right) {
-    if (Config::get().getQuery(right[0]).empty()) return {};
+game_value Query::cmd_prepareQueryConfigAr(game_state& gs, game_value_parameter right) {
+    if (right.size() < 1) {
+         gs.set_script_error(game_state::game_evaluator::evaluator_error_type::dim, 
+             "Not enough arguments provided, expected 2 but got 0"sv);
+        //No need to tell user that one argument is technically possible, should just use non array variant.
+    }
+
+        if (Config::get().getQuery(right[0]).empty()) return {};
 
     auto query = new GameDataDBQuery();
-    //#TODO verify that right has 2 entries
-
-    query->queryString = right[0];
+       query->queryString = right[0];
     query->isConfigQuery = true;
 
-    for (auto& it : right[1].to_array())
-        query->boundValues.emplace_back(it);
+    if (right.size() == 1) return query;
+
+    //user didn't pass array although we are only supposed to take array
+    //but instead of erroring we can just handle it.
+    if (right[1].type_enum() != game_data_type::ARRAY) {
+          query->boundValues.emplace_back(right[1]);
+
+          if (right.size() > 2) {
+              //User might be trying something like dbPrepareQuery ["foostmt", "huhu", "haha", "hihi"]
+              //Warn him that it's wrong.
+              gs.set_script_error(game_state::game_evaluator::evaluator_error_type::dim, 
+                  "Too many arguments provided. bindValues parameter is supposed to be array."sv);
+          }
+    } else
+        for (auto& it : right[1].to_array())
+            query->boundValues.emplace_back(it);
 
     return query;
 }
