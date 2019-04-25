@@ -61,6 +61,12 @@ void Config::reloadConfig() {
         statements[stmtName] = it.second.as<r_string>();
     }
 
+    if (!config["global"].IsMap()) throw std::runtime_error("Config Global entry is not a map");
+
+    dynamicQueriesEnabled = config["global"]["enableDynamicQueries"].as<bool>(true);
+
+
+
 
 }
 

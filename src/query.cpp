@@ -12,7 +12,12 @@ game_data* createGameDataDBQuery(param_archive* ar) {
 }
 
 
-game_value Query::cmd_prepareQuery(game_state&, game_value_parameter right) {
+game_value Query::cmd_prepareQuery(game_state& gs, game_value_parameter right) {
+    if (!Config::get().areDynamicQueriesEnabled()) {
+        gs.set_script_error(game_state::game_evaluator::evaluator_error_type::div_zero,
+            "Dynamic queries have been disabled in config"sv);
+        return {};
+    }
     auto query = new GameDataDBQuery();
 
     query->queryString = right;
@@ -21,6 +26,11 @@ game_value Query::cmd_prepareQuery(game_state&, game_value_parameter right) {
 }
 
 game_value Query::cmd_prepareQueryAr(game_state& gs, game_value_parameter right) {
+    if (!Config::get().areDynamicQueriesEnabled()) {
+        gs.set_script_error(game_state::game_evaluator::evaluator_error_type::div_zero,
+            "Dynamic queries have been disabled in config"sv);
+        return {};
+    }
     if (right.size() < 1) {
          gs.set_script_error(game_state::game_evaluator::evaluator_error_type::dim, 
                 "Not enough arguments provided, expected 2 but got 0"sv);

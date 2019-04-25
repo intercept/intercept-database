@@ -1,0 +1,19 @@
+global:
+ enableDynamicQueries: true #Allow queries to be created from SQF, if false only statements from config are allowed
+
+accounts:
+ maindb: #production db, don't break things here!
+  ip: stuff
+  username: root
+  password: pw
+  database: db
+  port: 3306 #optional
+
+statements:
+ #getMissionName: SELECT intel_missionen.`name` FROM intel_missionen WHERE intel_missionen.id > ?
+ getMissionName: SELECT 1
+
+#DB_query = dbPrepareQueryConfig ["getMissionName", [400]];
+#DB_connection = dbCreateConnection "maindb";
+#DB_query = dbPrepareQueryConfig "getMissionName";
+#DB_connection dbExecuteAsync DB_query;

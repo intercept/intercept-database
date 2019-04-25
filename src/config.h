@@ -22,6 +22,10 @@ public:
         return found->second;
     }
 
+    bool areDynamicQueriesEnabled() const {
+        return dynamicQueriesEnabled;
+    }
+
     static void initCommands();
     static inline registered_sqf_function handle_cmd_reloadConfig;
     static inline registered_sqf_function handle_cmd_version;
@@ -29,6 +33,7 @@ public:
 private:
     std::map<intercept::types::r_string, mariadb::account_ref> accounts;
     std::map<intercept::types::r_string, intercept::types::r_string> statements;
+    bool dynamicQueriesEnabled = true;
 
 
 
