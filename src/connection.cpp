@@ -63,8 +63,12 @@ game_data* createGameDataDBConnection(param_archive* ar) {
     return x;
 }
 
-game_value Connection::cmd_createConnectionArray(game_state&, game_value_parameter right) {
-    //#TODO error checking
+game_value Connection::cmd_createConnectionArray(game_state& gs, game_value_parameter right) {
+    if (right.size() < 5) {
+         gs.set_script_error(game_state::game_evaluator::evaluator_error_type::dim, 
+                r_string("Not enough arguments provided, expected 5 but got "sv)+std::to_string(right.size()));
+    }
+
     r_string ip = right[0];
     int port = right[1];
     r_string user = right[2];
