@@ -143,25 +143,44 @@ game_value Connection::cmd_execute(game_state& gs, game_value_parameter con, gam
 
     if (!gs.get_vm_context()->is_scheduled()) {
 
-        auto statement = session->create_statement(query->getQueryString());
+        try {
+            auto statement = session->create_statement(query->getQueryString());
 
-        uint32_t idx = 0;
-        for (auto& it : query->boundValues) {
+            uint32_t idx = 0;
+            for (auto& it : query->boundValues) {
 
-            switch (it.type_enum()) {
-            case game_data_type::SCALAR: statement->set_float(idx++, static_cast<float>(it)); break;
-            case game_data_type::BOOL: statement->set_boolean(idx++, static_cast<bool>(it)); break;
-            case game_data_type::STRING: statement->set_string(idx++, static_cast<r_string>(it)); break;
-            default:;
+                switch (it.type_enum()) {
+                case game_data_type::SCALAR: statement->set_float(idx++, static_cast<float>(it)); break;
+                case game_data_type::BOOL: statement->set_boolean(idx++, static_cast<bool>(it)); break;
+                case game_data_type::STRING: statement->set_string(idx++, static_cast<r_string>(it)); break;
+                default:;
+                }
             }
+
+            auto res = statement->query();
+            //#TODO handle error in create_statement and in query()
+
+
+            auto gd_res = new GameDataDBResult();
+            gd_res->res = res;
+
+            return gd_res;
+        } catch (mariadb::exception::connection& x) {
+            if (session->account()->hasErrorHandler()) {
+                for (auto& it : session->account()->getErrorHandlers()) {
+
+                    auto res = sqf::call(it, { static_cast<r_string>(x.what()), static_cast<size_t>(x.error_id()), query->getQueryString() });
+
+                    if (res.type_enum() == game_data_type::BOOL && static_cast<bool>(res)) return {}; //If returned true then error was handled.
+                }
+            }
+            auto exText = r_string("Intercept-DB exception ") + x.what() + "\nat\n" + query->getQueryString();
+            gs.set_script_error(game_state::game_evaluator::evaluator_error_type::foreign,
+                exText);
+            //#TODO does this log to RPT? I hope so.
         }
+        return {}; //burp
 
-        auto res = statement->query();
-        //#TODO handle error in create_statement and in query()
-        auto gd_res = new GameDataDBResult();
-        gd_res->res = res;
-
-        return gd_res;
     }
     //Set up callstack item to suspend while waiting
 
@@ -173,8 +192,7 @@ game_value Connection::cmd_execute(game_state& gs, game_value_parameter con, gam
 
 
     gd_res->data->fut = Threading::get().pushTask(session,
-        [stmt = query->getQueryString(), boundV = query->boundValues, result = gd_res->data](mariadb::connection_ref con) -> bool
-    {
+        [stmt = query->getQueryString(), boundV = query->boundValues, result = gd_res->data](mariadb::connection_ref con) -> bool {
         try {
             auto statement = con->create_statement(stmt);
             uint32_t idx = 0;
@@ -188,20 +206,20 @@ game_value Connection::cmd_execute(game_state& gs, game_value_parameter con, gam
             }
             result->res = statement->query();
             return true;
-        }
-        catch (mariadb::exception::connection& x) {
+        } catch (mariadb::exception::connection& x) {
             invoker_lock l;
             if (con->account()->hasErrorHandler()) {
                 for (auto& it : con->account()->getErrorHandlers()) {
 
                     auto res = sqf::call(it, { static_cast<r_string>(x.what()), static_cast<size_t>(x.error_id()), stmt });
 
-                    if (res.type_enum() == game_data_type::BOOL && static_cast<bool>(res)) break; //If returned true then error was handled.
+                    if (res.type_enum() == game_data_type::BOOL && static_cast<bool>(res)) return false; //If returned true then error was handled.
                 }
-            } else {
-                auto exText = r_string("Intercept-DB exception ") + x.what() + "\nat\n" + stmt;
-                sqf::diag_log(exText);
             }
+            auto exText = r_string("Intercept-DB exception ") + x.what() + "\nat\n" + stmt;
+            gs.set_script_error(game_state::game_evaluator::evaluator_error_type::foreign,
+                exText);
+            sqf::diag_log(exText);
 
             return false;
         }
@@ -219,7 +237,7 @@ game_value Connection::cmd_execute(game_state& gs, game_value_parameter con, gam
 __itt_string_handle* connection_cmd_executeAsync = __itt_string_handle_create("Connection::cmd_executeAsync");
 __itt_string_handle* connection_cmd_executeAsync_task = __itt_string_handle_create("Connection::cmd_executeAsync::task");
 
-game_value Connection::cmd_executeAsync(game_state&, game_value_parameter con, game_value_parameter qu) {
+game_value Connection::cmd_executeAsync(game_state& gs, game_value_parameter con, game_value_parameter qu) {
     __itt_task_begin(domainConnection, __itt_null, __itt_null, connection_cmd_executeAsync);
     auto session = con.get_as<GameDataDBConnection>()->session;
     auto query = qu.get_as<GameDataDBQuery>();
@@ -251,14 +269,13 @@ game_value Connection::cmd_executeAsync(game_state&, game_value_parameter con, g
                     
                     auto res = sqf::call(it, { static_cast<r_string>(x.what()), static_cast<size_t>(x.error_id()), stmt });
 
-                    if (res.type_enum() == game_data_type::BOOL && static_cast<bool>(res)) break; //If returned true then error was handled.
+                    if (res.type_enum() == game_data_type::BOOL && static_cast<bool>(res)) return false; //If returned true then error was handled.
                 }
-            } else {
-                auto exText = r_string("Intercept-DB exception ") + x.what() + "\nat\n" + stmt;
-                sqf::diag_log(exText);
             }
-
-            
+            auto exText = r_string("Intercept-DB exception ") + x.what() + "\nat\n" + stmt;
+            sqf::diag_log(exText);
+            gs.set_script_error(game_state::game_evaluator::evaluator_error_type::foreign,
+                exText);
 
             __itt_task_end(domainConnection);
             return false;
@@ -269,7 +286,7 @@ game_value Connection::cmd_executeAsync(game_state&, game_value_parameter con, g
     return gd_res;
 }
 
-game_value Connection::cmd_ping(game_state&, game_value_parameter con) {
+game_value Connection::cmd_ping(game_state& gs, game_value_parameter con) {
     try {
         auto session = con.get_as<GameDataDBConnection>()->session;
         auto result = session->query("SELECT 1;"sv);
@@ -277,6 +294,8 @@ game_value Connection::cmd_ping(game_state&, game_value_parameter con) {
         return result->next() && result->get_signed64(0) == 1;
     } catch (mariadb::exception::connection& x) {
         auto exText = r_string("Intercept-DB ping exception ") + x.what();
+        gs.set_script_error(game_state::game_evaluator::evaluator_error_type::foreign,
+                exText);
         sqf::diag_log(exText);
         return false;
     }
