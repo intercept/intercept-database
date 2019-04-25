@@ -1,7 +1,7 @@
 #pragma once
 #include <intercept.hpp>
 #include "../intercept/src/host/common/singleton.hpp"
-#include <vector>
+#include <filesystem>
 #include "mariadb++/account.hpp"
 #include "../intercept/src/client/headers/shared/containers.hpp"
 
@@ -22,6 +22,12 @@ public:
         return found->second;
     }
 
+   std::optional<std::filesystem::path> getSchema(r_string name) {
+        auto found = schemas.find(name);
+        if (found == schemas.end()) return {};
+        return found->second;
+    }
+
     bool areDynamicQueriesEnabled() const {
         return dynamicQueriesEnabled;
     }
@@ -33,6 +39,7 @@ public:
 private:
     std::map<intercept::types::r_string, mariadb::account_ref> accounts;
     std::map<intercept::types::r_string, intercept::types::r_string> statements;
+    std::map<intercept::types::r_string, std::filesystem::path> schemas;
     bool dynamicQueriesEnabled = true;
 
 

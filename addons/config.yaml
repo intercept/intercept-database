@@ -9,6 +9,9 @@ accounts:
   database: db
   port: 3306 #optional
 
+schemas:
+ test: schema.sql
+
 statements:
  #getMissionName: SELECT intel_missionen.`name` FROM intel_missionen WHERE intel_missionen.id > ?
  getMissionName: SELECT 1

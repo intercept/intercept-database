@@ -6,6 +6,7 @@
 #include <winsock2.h>
 #include "threading.h"
 #include "ittnotify.h"
+#include <fstream>
 
 __itt_domain* domainConnection = __itt_domain_create("connection");
 
@@ -106,7 +107,8 @@ class callstack_item_WaitForQueryResult : public vm_context::callstack_item {
 
 public:
 
-    callstack_item_WaitForQueryResult(ref<GameDataDBAsyncResult> inp) : res(inp) {}
+    callstack_item_WaitForQueryResult(ref<GameDataDBAsyncResult> inp, bool scheduled = true) : res(inp), scheduled(scheduled){
+    }
 
     const char* getName() const override { return "stuff"; };
     int varCount() const override { return 0; };
@@ -121,12 +123,21 @@ public:
 
     game_instruction* next(int& d1, const game_state* s) override {
         if (res->data->fut.wait_for(std::chrono::nanoseconds(0)) == std::future_status::ready) {
-            
             //push result onto stack.
             auto gd_res = new GameDataDBResult();
             gd_res->res = res->data->res;
             s->get_vm_context()->scriptStack[_stackEndAtStart] = game_value(gd_res);
             d1 = 2; //done
+            //#TODO fix this. Cannot currently because task wants invoker lock, which it won't get while we freeze the game here
+        //} else if (!scheduled) {
+        //    
+        //    res->data->fut.wait();
+        //
+        //    //push result onto stack.
+        //    auto gd_res = new GameDataDBResult();
+        //    gd_res->res = res->data->res;
+        //    s->get_vm_context()->scriptStack[_stackEndAtStart] = game_value(gd_res);
+        //    d1 = 2; //done
         } else {
             d1 = 3; //wait
         }
@@ -140,15 +151,14 @@ public:
     };
 
     ref<GameDataDBAsyncResult> res;
-
-
+    bool scheduled;
 };
 
 game_value Connection::cmd_execute(game_state& gs, game_value_parameter con, game_value_parameter qu) {
     auto session = con.get_as<GameDataDBConnection>()->session;
     auto query = qu.get_as<GameDataDBQuery>();
 
-    if (!gs.get_vm_context()->is_scheduled()) {
+    if (!gs.get_vm_context()->is_scheduled()) { //#TODO just keep using the callstack item but tell it to wait
 
         try {
             auto statement = session->create_statement(query->getQueryString());
@@ -199,7 +209,7 @@ game_value Connection::cmd_execute(game_state& gs, game_value_parameter con, gam
 
 
     gd_res->data->fut = Threading::get().pushTask(session,
-        [stmt = query->getQueryString(), boundV = query->boundValues, result = gd_res->data](mariadb::connection_ref con) -> bool {
+        [stmt = query->getQueryString(), boundV = query->boundValues, result = gd_res->data, &gs](mariadb::connection_ref con) -> bool {
         try {
             auto statement = con->create_statement(stmt);
             uint32_t idx = 0;
@@ -252,7 +262,7 @@ game_value Connection::cmd_executeAsync(game_state& gs, game_value_parameter con
     auto gd_res = new GameDataDBAsyncResult();
     gd_res->data = std::make_shared<GameDataDBAsyncResult::dataT>();
     gd_res->data->fut = Threading::get().pushTask(session,   
-    [stmt = query->getQueryString(), boundV = query->boundValues, result = gd_res->data](mariadb::connection_ref con) -> bool
+    [stmt = query->getQueryString(), boundV = query->boundValues, result = gd_res->data, &gs](mariadb::connection_ref con) -> bool
     {
         __itt_task_begin(domainConnection, __itt_null, __itt_null, connection_cmd_executeAsync_task);
         try {
@@ -321,6 +331,90 @@ game_value Connection::cmd_addErrorHandler(game_state&, game_value_parameter con
     return {};
 }
 
+game_value Connection::cmd_loadSchema(game_state& gs, game_value_parameter con, game_value_parameter name) {
+    
+
+    auto session = con.get_as<GameDataDBConnection>()->session;
+    r_string schemaName = name;
+    auto schemaPath = Config::get().getSchema(schemaName);
+
+    if (!schemaPath) {
+        gs.set_script_error(game_state::game_evaluator::evaluator_error_type::foreign,
+            "Schema name not found in config"sv);
+        return {};
+    }
+
+    if (!std::filesystem::exists(*schemaPath)) {
+        gs.set_script_error(game_state::game_evaluator::evaluator_error_type::foreign,
+            r_string("Schema file")+schemaPath->string()+" does not exist"sv);
+        return {};
+    }
+
+    std::ifstream t(*schemaPath);
+    std::string str;
+
+    t.seekg(0, std::ios::end);
+    str.resize(t.tellg());
+    t.seekg(0, std::ios::beg);
+    t.read(str.data(), str.length());
+    t.close();
+
+
+    if (!gs.get_vm_context()->is_scheduled()) { 
+        try {
+            return session->execute(static_cast<r_string>(str));;
+        }
+        catch (mariadb::exception::connection & x) {
+            invoker_lock l;
+            auto exText = r_string("Intercept-DB exception ") + x.what() + "\nwhile executing loadSchema";
+            gs.set_script_error(game_state::game_evaluator::evaluator_error_type::foreign,
+                exText);
+            sqf::diag_log(exText);
+            return {};
+        }
+    }
+
+    //Set up callstack item to suspend while waiting
+
+    auto& cs = gs.get_vm_context()->callstack;
+
+    auto gd_res = new GameDataDBAsyncResult();
+    gd_res->data = std::make_shared<GameDataDBAsyncResult::dataT>();
+
+    gd_res->data->fut = Threading::get().pushTask(session,
+        [str, result = gd_res->data, &gs](mariadb::connection_ref con) -> bool {
+        try {
+            con->execute(static_cast<r_string>(str));
+            return true;
+        }
+        catch (mariadb::exception::connection& x) {
+            invoker_lock l;
+            //if (con->account()->hasErrorHandler()) {
+            //    for (auto& it : con->account()->getErrorHandlers()) {
+            //
+            //        auto res = sqf::call(it, { static_cast<r_string>(x.what()), static_cast<size_t>(x.error_id()), stmt });
+            //
+            //        if (res.type_enum() == game_data_type::BOOL && static_cast<bool>(res)) return false; //If returned true then error was handled.
+            //    }
+            //}
+            auto exText = r_string("Intercept-DB exception ") + x.what() + "\nwhile executing loadSchema";
+            gs.set_script_error(game_state::game_evaluator::evaluator_error_type::foreign,
+                exText);
+            sqf::diag_log(exText);
+
+            return false;
+        }
+    });
+
+    auto newItem = new callstack_item_WaitForQueryResult(gd_res);
+    newItem->_parent = cs.back();
+    newItem->_stackEndAtStart = gs.get_vm_context()->scriptStack.size() - 2;
+    newItem->_stackEnd = newItem->_stackEndAtStart + 1;
+    newItem->_varSpace.parent = &cs.back()->_varSpace;
+    cs.emplace_back(newItem);
+    return {};
+}
+
 void Connection::initCommands() {
     
     auto dbType = host::register_sqf_type("DBCON"sv, "databaseConnection"sv, "TODO"sv, "databaseConnection"sv, createGameDataDBConnection);
@@ -335,7 +429,5 @@ void Connection::initCommands() {
     handle_cmd_ping = host::register_sqf_command("dbPing", "TODO", Connection::cmd_ping, game_data_type::BOOL, GameDataDBConnection_typeE);
     handle_cmd_isConnected = host::register_sqf_command("dbIsConnected", "TODO", Connection::cmd_isConnected, game_data_type::BOOL, GameDataDBConnection_typeE);
     handle_cmd_addErrorHandler = host::register_sqf_command("dbAddErrorHandler", "TODO", Connection::cmd_addErrorHandler, game_data_type::NOTHING, GameDataDBConnection_typeE, game_data_type::CODE);
-
-
-
+    handle_cmd_loadSchema = host::register_sqf_command("dbLoadSchema", "TODO", Connection::cmd_loadSchema, game_data_type::NOTHING, GameDataDBConnection_typeE, game_data_type::STRING);
 }

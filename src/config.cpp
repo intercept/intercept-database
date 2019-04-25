@@ -52,6 +52,10 @@ void Config::reloadConfig() {
         auto port = value["port"].as<int>(3306);
 
         auto acc = mariadb::account::create(ip, user, password, database, port);
+        acc->set_connect_option(MYSQL_SET_CHARSET_NAME, r_string("utf8mb4"sv));
+        //acc->set_connect_option(MARIADB_OPT_MULTI_STATEMENTS, true);
+        //acc->set_connect_option(MARIADB_OPT_MULTI_RESULTS, true);
+        //acc->set_auto_commit(false);
 
         accounts[accountName] = acc;
     }
@@ -66,6 +70,13 @@ void Config::reloadConfig() {
     dynamicQueriesEnabled = config["global"]["enableDynamicQueries"].as<bool>(true);
 
 
+    if (config["schemas"].IsMap())
+        for (auto& it : config["schemas"]) {
+            r_string schemaName = it.first.as<r_string>();
+            auto value = it.second;
+
+            schemas[schemaName] = std::filesystem::path("@InterceptDB"sv) / value.as<std::string>();
+        }
 
 
 }
@@ -94,7 +105,7 @@ void Config::initCommands() {
     
     handle_cmd_reloadConfig = intercept::client::host::register_sqf_command("dbReloadConfig", "TODO", cmd_reloadConfig, game_data_type::STRING);
     handle_cmd_version = intercept::client::host::register_sqf_command("dbVersion", "TODO", [](game_state&) -> game_value {
-                                return "1.0";
+                                return "1.1";
                             }, game_data_type::STRING);
 
 

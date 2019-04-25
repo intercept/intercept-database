@@ -15,6 +15,7 @@ public:
     static game_value cmd_ping(game_state&, game_value_parameter con);
     static game_value cmd_isConnected(game_state&, game_value_parameter con);
     static game_value cmd_addErrorHandler(game_state&, game_value_parameter con, game_value_parameter handler);
+    static game_value cmd_loadSchema(game_state&, game_value_parameter con, game_value_parameter name);
 
 
 
@@ -30,4 +31,5 @@ public:
     static inline types::registered_sqf_function handle_cmd_ping;
     static inline types::registered_sqf_function handle_cmd_isConnected;
     static inline types::registered_sqf_function handle_cmd_addErrorHandler;
+    static inline types::registered_sqf_function handle_cmd_loadSchema;
 };
