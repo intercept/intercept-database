@@ -81,10 +81,13 @@ game_value Connection::cmd_createConnectionArray(game_state&, game_value_paramet
     return newCon;
 }
 
-game_value Connection::cmd_createConnectionConfig(game_state&, game_value_parameter right) {
-    
+game_value Connection::cmd_createConnectionConfig(game_state& gs, game_value_parameter right) {
     auto acc = Config::get().getAccount(right);
-    if (!acc) return  {};
+    if (!acc) {
+        gs.set_script_error(game_state::game_evaluator::evaluator_error_type::foreign,
+            r_string("dbCreateConnection account \"")+static_cast<r_string>(right)+"\" not found in config");
+        return {};
+    }
 
 
     auto newCon = new GameDataDBConnection();

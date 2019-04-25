@@ -13,7 +13,6 @@ game_data* createGameDataDBQuery(param_archive* ar) {
 
 
 game_value Query::cmd_prepareQuery(game_state&, game_value_parameter right) {
-
     auto query = new GameDataDBQuery();
 
     query->queryString = right;
