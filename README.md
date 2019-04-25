@@ -28,3 +28,5 @@ systemChat format ["xxx %1", _resultArray];
 diag_log _resultArray;
 
 ```
+
+**for further documentation see the [Wiki](https://github.com/intercept/intercept-database/wiki)**
