@@ -85,6 +85,14 @@ GameDataDBAsyncResult* Connection::pushAsyncQuery(game_state& gs, mariadb::conne
         [queryString, boundValues, result = gd_res->data, &gs](mariadb::connection_ref con) -> bool {
         try {
             auto statement = con->create_statement(queryString);
+
+            if (statement->get_bind_count() != boundValues.size()) {
+                invoker_lock l;
+                throwQueryError(gs, con, 2, 
+                    r_string("Invalid number of bind values. Expected "sv)+std::to_string(statement->get_bind_count())+" got "sv+std::to_string(boundValues.size())
+                    , queryString);
+                return false;
+            }
             uint32_t idx = 0;
             for (auto& it : boundValues) {
 
@@ -210,6 +218,14 @@ game_value Connection::cmd_execute(game_state& gs, game_value_parameter con, gam
 
         try {
             auto statement = session->create_statement(query->getQueryString());
+
+            if (statement->get_bind_count() != query->boundValues.size()) {
+                invoker_lock l;
+                throwQueryError(gs, session, 2,
+                    r_string("Invalid number of bind values. Expected "sv) + std::to_string(statement->get_bind_count()) + " got "sv + std::to_string(query->boundValues.size())
+                    , query->getQueryString());
+                return {};
+            }
 
             uint32_t idx = 0;
             for (auto& it : query->boundValues) {
