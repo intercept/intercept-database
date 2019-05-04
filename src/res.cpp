@@ -39,27 +39,31 @@ game_value Result::cmd_toArray(game_state&, game_value_parameter right) {
         auto_array<game_value> row;
 
         for (mariadb::u32 i = 0u; i < res->column_count(); ++i) {
-            switch (res->column_type(i)) {
-                case mariadb::value::null: row.emplace_back(game_value{}); break;
-                case mariadb::value::date: row.emplace_back(res->get_date(i).str()); break;
-                case mariadb::value::date_time: row.emplace_back(res->get_date_time(i).str()); break;
-                case mariadb::value::time: row.emplace_back(res->get_time(i).str_time()); break;
-                case mariadb::value::string: row.emplace_back(res->get_string(i)); break;
-                case mariadb::value::boolean: row.emplace_back(res->get_boolean(i)); break;
-                case mariadb::value::decimal: row.emplace_back(res->get_decimal(i).float32()); break;
-                case mariadb::value::unsigned8: row.emplace_back(static_cast<float>(res->get_unsigned8(i))); break;
-                case mariadb::value::signed8: row.emplace_back(static_cast<float>(res->get_signed8(i))); break;
-                case mariadb::value::unsigned16: row.emplace_back(static_cast<float>(res->get_unsigned16(i))); break;
-                case mariadb::value::signed16: row.emplace_back(static_cast<float>(res->get_signed16(i))); break;
-                case mariadb::value::unsigned32: row.emplace_back(static_cast<float>(res->get_unsigned32(i))); break;
-                case mariadb::value::signed32: row.emplace_back(static_cast<float>(res->get_signed32(i))); break;
-                case mariadb::value::unsigned64: row.emplace_back(static_cast<float>(res->get_unsigned64(i))); break;
-                case mariadb::value::signed64: row.emplace_back(static_cast<float>(res->get_signed64(i))); break;
-                case mariadb::value::float32: row.emplace_back(res->get_float(i)); break;
-                case mariadb::value::double64: row.emplace_back(static_cast<float>(res->get_double(i))); break;
-                case mariadb::value::enumeration: row.emplace_back(res->get_string(i)); break;
-                case mariadb::value::blob: row.emplace_back(res->get_blobString(i)); break;
-                default: ;
+            try {
+                switch (res->column_type(i)) {
+                    case mariadb::value::null: row.emplace_back(game_value{}); break;
+                    case mariadb::value::date: row.emplace_back(res->get_date(i).str()); break;
+                    case mariadb::value::date_time: row.emplace_back(res->get_date_time(i).str()); break;
+                    case mariadb::value::time: row.emplace_back(res->get_time(i).str_time()); break;
+                    case mariadb::value::string: row.emplace_back(res->get_string(i)); break;
+                    case mariadb::value::boolean: row.emplace_back(res->get_boolean(i)); break;
+                    case mariadb::value::decimal: row.emplace_back(res->get_decimal(i).float32()); break;
+                    case mariadb::value::unsigned8: row.emplace_back(static_cast<float>(res->get_unsigned8(i))); break;
+                    case mariadb::value::signed8: row.emplace_back(static_cast<float>(res->get_signed8(i))); break;
+                    case mariadb::value::unsigned16: row.emplace_back(static_cast<float>(res->get_unsigned16(i))); break;
+                    case mariadb::value::signed16: row.emplace_back(static_cast<float>(res->get_signed16(i))); break;
+                    case mariadb::value::unsigned32: row.emplace_back(static_cast<float>(res->get_unsigned32(i))); break;
+                    case mariadb::value::signed32: row.emplace_back(static_cast<float>(res->get_signed32(i))); break;
+                    case mariadb::value::unsigned64: row.emplace_back(static_cast<float>(res->get_unsigned64(i))); break;
+                    case mariadb::value::signed64: row.emplace_back(static_cast<float>(res->get_signed64(i))); break;
+                    case mariadb::value::float32: row.emplace_back(res->get_float(i)); break;
+                    case mariadb::value::double64: row.emplace_back(static_cast<float>(res->get_double(i))); break;
+                    case mariadb::value::enumeration: row.emplace_back(res->get_string(i)); break;
+                    case mariadb::value::blob: row.emplace_back(res->get_blobString(i)); break;
+                    default: ;
+                }
+            } catch (std::invalid_argument & x) {//get_date_time getting "NULL"
+                row.emplace_back("NULL"sv); break;
             }
         }
         result.emplace_back(std::move(row));
