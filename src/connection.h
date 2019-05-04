@@ -1,5 +1,7 @@
 #pragma once
 #include <intercept.hpp>
+#include "mariadb++/connection.hpp"
+#include "res.h"
 using namespace intercept;
 using namespace intercept::types;
 
@@ -7,6 +9,8 @@ using namespace intercept::types;
 
 class Connection {
 public:
+    static bool throwQueryError(game_state& gs, mariadb::connection_ref connection, size_t errorID, r_string errorMessage, r_string queryString);
+    static [[nodiscard]] GameDataDBAsyncResult* pushAsyncQuery(game_state& gs, mariadb::connection_ref connection, auto_array<game_value> boundValues, r_string queryString);
 
     static game_value cmd_createConnectionArray(game_state&, game_value_parameter right);
     static game_value cmd_createConnectionConfig(game_state&, game_value_parameter right);

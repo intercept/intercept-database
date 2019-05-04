@@ -64,6 +64,54 @@ game_data* createGameDataDBConnection(param_archive* ar) {
     return x;
 }
 
+bool Connection::throwQueryError(game_state& gs, mariadb::connection_ref connection, size_t errorID, r_string errorMessage, r_string queryString) {
+    if (connection->account()->hasErrorHandler()) {
+        for (auto& it : connection->account()->getErrorHandlers()) {
+            auto res = sqf::call(it, { errorMessage, errorID, queryString });
+
+            if (res.type_enum() == game_data_type::BOOL && static_cast<bool>(res)) return true; //error was handled
+        }
+    }
+    auto exText = r_string("Intercept-DB exception ") + errorMessage + "\nat\n" + queryString;
+    gs.set_script_error(game_state::game_evaluator::evaluator_error_type::foreign,
+        exText);
+    return false; //error was not handled and we threw it
+}
+
+GameDataDBAsyncResult* Connection::pushAsyncQuery(game_state& gs, mariadb::connection_ref connection, auto_array<game_value> boundValues, r_string queryString) {
+    auto gd_res = new GameDataDBAsyncResult();
+    gd_res->data = std::make_shared<GameDataDBAsyncResult::dataT>();
+    gd_res->data->fut = Threading::get().pushTask(connection,
+        [queryString, boundValues, result = gd_res->data, &gs](mariadb::connection_ref con) -> bool {
+        try {
+            auto statement = con->create_statement(queryString);
+            uint32_t idx = 0;
+            for (auto& it : boundValues) {
+
+                switch (it.type_enum()) {
+                case game_data_type::SCALAR: statement->set_float(idx++, static_cast<float>(it)); break;
+                case game_data_type::BOOL: statement->set_boolean(idx++, static_cast<bool>(it)); break;
+                case game_data_type::STRING: statement->set_string(idx++, static_cast<r_string>(it)); break;
+                default:;
+                }
+            }
+            result->res = statement->query();
+            return true;
+        }
+        catch (mariadb::exception::connection& x) {
+            invoker_lock l;
+            throwQueryError(gs, con, static_cast<size_t>(x.error_id()), static_cast<r_string>(x.what()), queryString);
+            return false;
+        }
+        catch (std::out_of_range& x) {
+            invoker_lock l;
+            throwQueryError(gs, con, 1337, static_cast<r_string>(x.what()), queryString);
+            return false;
+        }
+    });
+    return gd_res;
+}
+
 game_value Connection::cmd_createConnectionArray(game_state& gs, game_value_parameter right) {
     if (right.size() < 5) {
          gs.set_script_error(game_state::game_evaluator::evaluator_error_type::dim, 
@@ -167,34 +215,22 @@ game_value Connection::cmd_execute(game_state& gs, game_value_parameter con, gam
             for (auto& it : query->boundValues) {
 
                 switch (it.type_enum()) {
-                case game_data_type::SCALAR: statement->set_float(idx++, static_cast<float>(it)); break;
-                case game_data_type::BOOL: statement->set_boolean(idx++, static_cast<bool>(it)); break;
-                case game_data_type::STRING: statement->set_string(idx++, static_cast<r_string>(it)); break;
-                default:;
+                    case game_data_type::SCALAR: statement->set_float(idx++, static_cast<float>(it)); break;
+                    case game_data_type::BOOL: statement->set_boolean(idx++, static_cast<bool>(it)); break;
+                    case game_data_type::STRING: statement->set_string(idx++, static_cast<r_string>(it)); break;
+                    default:;
                 }
             }
 
             auto res = statement->query();
-            //#TODO handle error in create_statement and in query()
-
 
             auto gd_res = new GameDataDBResult();
             gd_res->res = res;
-
             return gd_res;
         } catch (mariadb::exception::connection& x) {
-            if (session->account()->hasErrorHandler()) {
-                for (auto& it : session->account()->getErrorHandlers()) {
-
-                    auto res = sqf::call(it, { static_cast<r_string>(x.what()), static_cast<size_t>(x.error_id()), query->getQueryString() });
-
-                    if (res.type_enum() == game_data_type::BOOL && static_cast<bool>(res)) return {}; //If returned true then error was handled.
-                }
-            }
-            auto exText = r_string("Intercept-DB exception ") + x.what() + "\nat\n" + query->getQueryString();
-            gs.set_script_error(game_state::game_evaluator::evaluator_error_type::foreign,
-                exText);
-            //#TODO does this log to RPT? I hope so.
+            throwQueryError(gs, session, static_cast<size_t>(x.error_id()), static_cast<r_string>(x.what()), query->getQueryString());
+        } catch (std::out_of_range& x) {
+            throwQueryError(gs, session, 1337, static_cast<r_string>(x.what()), query->getQueryString());
         }
         return {}; //burp
 
@@ -203,44 +239,7 @@ game_value Connection::cmd_execute(game_state& gs, game_value_parameter con, gam
 
     auto& cs = gs.get_vm_context()->callstack;
 
-    auto gd_res = new GameDataDBAsyncResult();
-    gd_res->data = std::make_shared<GameDataDBAsyncResult::dataT>();
-
-
-
-    gd_res->data->fut = Threading::get().pushTask(session,
-        [stmt = query->getQueryString(), boundV = query->boundValues, result = gd_res->data, &gs](mariadb::connection_ref con) -> bool {
-        try {
-            auto statement = con->create_statement(stmt);
-            uint32_t idx = 0;
-            for (auto& it : boundV) {
-
-                switch (it.type_enum()) {
-                case game_data_type::SCALAR: statement->set_float(idx++, static_cast<float>(it)); break;
-                case game_data_type::BOOL: statement->set_boolean(idx++, static_cast<bool>(it)); break;
-                case game_data_type::STRING: statement->set_string(idx++, static_cast<r_string>(it)); break;
-                }
-            }
-            result->res = statement->query();
-            return true;
-        } catch (mariadb::exception::connection& x) {
-            invoker_lock l;
-            if (con->account()->hasErrorHandler()) {
-                for (auto& it : con->account()->getErrorHandlers()) {
-
-                    auto res = sqf::call(it, { static_cast<r_string>(x.what()), static_cast<size_t>(x.error_id()), stmt });
-
-                    if (res.type_enum() == game_data_type::BOOL && static_cast<bool>(res)) return false; //If returned true then error was handled.
-                }
-            }
-            auto exText = r_string("Intercept-DB exception ") + x.what() + "\nat\n" + stmt;
-            gs.set_script_error(game_state::game_evaluator::evaluator_error_type::foreign,
-                exText);
-            sqf::diag_log(exText);
-
-            return false;
-        }
-    });
+    auto gd_res = pushAsyncQuery(gs, session, query->boundValues, query->getQueryString());
 
     auto newItem = new callstack_item_WaitForQueryResult(gd_res);
     newItem->_parent = cs.back();
@@ -259,45 +258,8 @@ game_value Connection::cmd_executeAsync(game_state& gs, game_value_parameter con
     auto session = con.get_as<GameDataDBConnection>()->session;
     auto query = qu.get_as<GameDataDBQuery>();
 
-    auto gd_res = new GameDataDBAsyncResult();
-    gd_res->data = std::make_shared<GameDataDBAsyncResult::dataT>();
-    gd_res->data->fut = Threading::get().pushTask(session,   
-    [stmt = query->getQueryString(), boundV = query->boundValues, result = gd_res->data, &gs](mariadb::connection_ref con) -> bool
-    {
-        __itt_task_begin(domainConnection, __itt_null, __itt_null, connection_cmd_executeAsync_task);
-        try {
-            auto statement = con->create_statement(stmt);
-            uint32_t idx = 0;
-            for (auto& it : boundV) {
 
-                switch (it.type_enum()) {
-                case game_data_type::SCALAR: statement->set_float(idx++, static_cast<float>(it)); break;
-                case game_data_type::BOOL: statement->set_boolean(idx++, static_cast<bool>(it)); break;
-                case game_data_type::STRING: statement->set_string(idx++, static_cast<r_string>(it)); break;
-                }
-            }
-            result->res = statement->query();
-            __itt_task_end(domainConnection);
-            return true;
-        } catch (mariadb::exception::connection& x) {
-            invoker_lock l;
-            if (con->account()->hasErrorHandler()) {
-                for (auto& it : con->account()->getErrorHandlers()) {
-                    
-                    auto res = sqf::call(it, { static_cast<r_string>(x.what()), static_cast<size_t>(x.error_id()), stmt });
-
-                    if (res.type_enum() == game_data_type::BOOL && static_cast<bool>(res)) return false; //If returned true then error was handled.
-                }
-            }
-            auto exText = r_string("Intercept-DB exception ") + x.what() + "\nat\n" + stmt;
-            sqf::diag_log(exText);
-            gs.set_script_error(game_state::game_evaluator::evaluator_error_type::foreign,
-                exText);
-
-            __itt_task_end(domainConnection);
-            return false;
-        }
-    }, true);
+    auto gd_res = pushAsyncQuery(gs, session, query->boundValues, query->getQueryString());
     Threading::get().pushAsyncWork(gd_res);
     __itt_task_end(domainConnection);
     return gd_res;
