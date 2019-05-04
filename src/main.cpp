@@ -10,7 +10,7 @@
 __itt_domain* domainMain = __itt_domain_create("main");
 
 int intercept::api_version() { //This is required for the plugin to work.
-    return 1;
+    return INTERCEPT_SDK_API_VERSION;
 }
 
 void intercept::register_interfaces() {
