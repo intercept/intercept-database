@@ -81,27 +81,47 @@ bool Connection::throwQueryError(game_state& gs, mariadb::connection_ref connect
 GameDataDBAsyncResult* Connection::pushAsyncQuery(game_state& gs, mariadb::connection_ref connection, auto_array<game_value> boundValues, r_string queryString) {
     auto gd_res = new GameDataDBAsyncResult();
     gd_res->data = std::make_shared<GameDataDBAsyncResult::dataT>();
+
+
+    //If we give them to task, it will destruct the array after task is done, and may call dealloc int he pool allocator
+    std::vector<
+        std::variant<float, bool, r_string>
+    > boundValuesQuery;
+
+    for (auto& it : boundValues) {
+        switch (it.type_enum()) {
+        case game_data_type::SCALAR: boundValuesQuery.emplace_back(static_cast<float>(it)); break;
+        case game_data_type::BOOL: boundValuesQuery.emplace_back(static_cast<bool>(it)); break;
+        case game_data_type::STRING: boundValuesQuery.emplace_back(static_cast<r_string>(it)); break;
+        default:;
+        }
+    }
+
     gd_res->data->fut = Threading::get().pushTask(connection,
-        [queryString, boundValues, result = gd_res->data, &gs](mariadb::connection_ref con) -> bool {
+        [queryString, boundValuesQuery, result = gd_res->data, &gs](mariadb::connection_ref con) -> bool {
         try {
             auto statement = con->create_statement(queryString);
 
-            if (statement->get_bind_count() != boundValues.size()) {
+            if (statement->get_bind_count() != boundValuesQuery.size()) {
                 invoker_lock l;
                 throwQueryError(gs, con, 2, 
-                    r_string("Invalid number of bind values. Expected "sv)+std::to_string(statement->get_bind_count())+" got "sv+std::to_string(boundValues.size())
+                    r_string("Invalid number of bind values. Expected "sv)+std::to_string(statement->get_bind_count())+" got "sv+std::to_string(boundValuesQuery.size())
                     , queryString);
                 return false;
             }
             uint32_t idx = 0;
-            for (auto& it : boundValues) {
-
-                switch (it.type_enum()) {
-                case game_data_type::SCALAR: statement->set_float(idx++, static_cast<float>(it)); break;
-                case game_data_type::BOOL: statement->set_boolean(idx++, static_cast<bool>(it)); break;
-                case game_data_type::STRING: statement->set_string(idx++, static_cast<r_string>(it)); break;
-                default:;
-                }
+            for (auto& it : boundValuesQuery) {
+                std::visit([&idx, &statement](auto && arg) {
+                    using T = std::decay_t<decltype(arg)>;
+                    if constexpr (std::is_same_v<T, float>)
+                        statement->set_float(idx++, arg);
+                    else if constexpr (std::is_same_v<T, bool>)
+                        statement->set_boolean(idx++, arg);
+                    else if constexpr (std::is_same_v<T, r_string>)
+                        statement->set_string(idx++, arg);
+                    else
+                        static_assert(false, "non-exhaustive visitor!");
+                    }, it);
             }
             result->res = statement->query();
             return true;
@@ -229,7 +249,6 @@ game_value Connection::cmd_execute(game_state& gs, game_value_parameter con, gam
 
             uint32_t idx = 0;
             for (auto& it : query->boundValues) {
-
                 switch (it.type_enum()) {
                     case game_data_type::SCALAR: statement->set_float(idx++, static_cast<float>(it)); break;
                     case game_data_type::BOOL: statement->set_boolean(idx++, static_cast<bool>(it)); break;
@@ -273,7 +292,6 @@ game_value Connection::cmd_executeAsync(game_state& gs, game_value_parameter con
     __itt_task_begin(domainConnection, __itt_null, __itt_null, connection_cmd_executeAsync);
     auto session = con.get_as<GameDataDBConnection>()->session;
     auto query = qu.get_as<GameDataDBQuery>();
-
 
     auto gd_res = pushAsyncQuery(gs, session, query->boundValues, query->getQueryString());
     Threading::get().pushAsyncWork(gd_res);

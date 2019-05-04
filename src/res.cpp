@@ -38,7 +38,7 @@ game_value Result::cmd_toArray(game_state&, game_value_parameter right) {
     while (res->next()) {
         auto_array<game_value> row;
 
-        for (size_t i = 0u; i < res->column_count(); ++i) {
+        for (mariadb::u32 i = 0u; i < res->column_count(); ++i) {
             switch (res->column_type(i)) {
                 case mariadb::value::null: row.emplace_back(game_value{}); break;
                 case mariadb::value::date: row.emplace_back(res->get_date(i).str()); break;
