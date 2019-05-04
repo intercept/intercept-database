@@ -58,6 +58,7 @@ game_value Result::cmd_toArray(game_state&, game_value_parameter right) {
                 case mariadb::value::float32: row.emplace_back(res->get_float(i)); break;
                 case mariadb::value::double64: row.emplace_back(static_cast<float>(res->get_double(i))); break;
                 case mariadb::value::enumeration: row.emplace_back(res->get_string(i)); break;
+                case mariadb::value::blob: row.emplace_back(res->get_blobString(i)); break;
                 default: ;
             }
         }
