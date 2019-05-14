@@ -54,3 +54,4 @@ CTestTestfile.cmake
 .idea/
 
 CMakeSettings\.json
+/docs/_build

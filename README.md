@@ -1,1 +1,1 @@
-This is the Intercept plugin template project.
+![docs](https://readthedocs.org/projects/intercept-database/badge/?version=stable)
