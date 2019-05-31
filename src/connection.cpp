@@ -136,7 +136,7 @@ GameDataDBAsyncResult* Connection::pushAsyncQuery(game_state& gs, mariadb::conne
             throwQueryError(gs, con, 1337, static_cast<r_string>(x.what()), queryString);
             return false;
         }
-    });
+    }, true);
     return gd_res;
 }
 

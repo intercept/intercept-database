@@ -1,5 +1,6 @@
 #include "threading.h"
 #include "ittnotify.h"
+#include "../ittnotify/ittnotify.h"
 using namespace std::chrono_literals;
 
 #include <iomanip> // put_time
@@ -80,9 +81,10 @@ void Worker::run() {
         __itt_task_begin(domain, __itt_null, __itt_null, worker_processTaskTask);
         uint64_t tasksLeft = tasks.size();
         __itt_counter_set_value(counter, &tasksLeft);
-        if (!tasks.empty()) {
+        if (tasksLeft) {
             std::shared_ptr<Task> task = tasks.front();
             tasks.pop();
+            tasksLeft--;
             lastJob = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
             __itt_sync_releasing(&taskLock);
             l.unlock();
@@ -91,7 +93,7 @@ void Worker::run() {
             task->prom.set_value(task->job(workerConnection));
             __itt_task_end(domain);
             if (task->isInWorkList || rememberUpdateWorklist) {
-                if (tasksLeft % 64 == 0) {
+                if (tasksLeft % 64 == 0) { //Don't trust the compiler telling you nonsense
                     Threading::get().updateAsyncWorkLists();
                     rememberUpdateWorklist = false;
                 } else
