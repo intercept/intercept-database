@@ -28,7 +28,7 @@ public:
     r_string to_string() const override {
         if (!session) return r_string("<no session>"sv);
         if (!session->connected()) return r_string("<not connected>"sv);
-        return "<connected to database: " + session->schema() + ">";        
+        return "<connected to database: " + session->schema() + ">";
     }
     //virtual bool equals(const game_data*) const override; //#TODO isEqualTo on hashMaps would be quite nice I guess?
     const char* type_as_string() const override { return "databaseConnection"; }
@@ -85,10 +85,15 @@ GameDataDBAsyncResult* Connection::pushAsyncQuery(game_state& gs, mariadb::conne
 
     //If we give them to task, it will destruct the array after task is done, and may call dealloc int he pool allocator
     std::vector<
-        std::variant<float, bool, r_string>
+        std::variant<float, bool, r_string, std::monostate>
     > boundValuesQuery;
 
     for (auto& it : boundValues) {
+        if (it.is_null()) {
+            boundValuesQuery.emplace_back(std::monostate());
+            continue;
+        }
+
         switch (it.type_enum()) {
         case game_data_type::SCALAR: boundValuesQuery.emplace_back(static_cast<float>(it)); break;
         case game_data_type::BOOL: boundValuesQuery.emplace_back(static_cast<bool>(it)); break;
@@ -119,6 +124,8 @@ GameDataDBAsyncResult* Connection::pushAsyncQuery(game_state& gs, mariadb::conne
                         statement->set_boolean(idx++, arg);
                     else if constexpr (std::is_same_v<T, r_string>)
                         statement->set_string(idx++, arg);
+                    else if constexpr (std::is_same_v<T, std::monostate>)
+                        statement->set_null(idx++);
                     else
                         static_assert(false, "non-exhaustive visitor!");
                     }, it);

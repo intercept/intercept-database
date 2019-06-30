@@ -79,7 +79,7 @@ game_value Result::cmd_toParsedArray(game_state& state, game_value_parameter rig
     while (res->next()) {
         auto_array<game_value> row;
 
-        auto addParsedString = [&row](const r_string& content) {
+        auto addParsedString = [&row, &state](const r_string& content) {
 
             if (content.front() == '[') {//array
                 //attempt parse
