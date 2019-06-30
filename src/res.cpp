@@ -79,7 +79,7 @@ game_value Result::cmd_toParsedArray(game_state& state, game_value_parameter rig
     while (res->next()) {
         auto_array<game_value> row;
 
-        auto addParsedString = [&row, &state](const r_string& content) {
+        auto addParsedString = [&row, &state](r_string&& content) {
 
             if (content.front() == '[') {//array
                 //attempt parse
@@ -99,6 +99,7 @@ game_value Result::cmd_toParsedArray(game_state& state, game_value_parameter rig
                 || content.front() == 'f'//false
                 || content.front() == 'F'//False
                 || (content.front() >= '0' && content.front() <= '9')//number
+                || (content.front() == '\'' || content.front() == '"')//string
                 ) {
 
                 auto arrayContent = sqf::parse_simple_array(r_string("["sv)+content+"]"sv);
