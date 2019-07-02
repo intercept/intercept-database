@@ -37,6 +37,7 @@ The InterceptDB Config file
      #timestamp: Return Date/DateTime as a timestamp as a number (this can incur precision loss)
      #timestampString: Return Date/DateTime as a unix timestamp in a string
      #timestampStringMS: Return Date/DateTime as a millisecond unix timestamp in a string
+     parseTinyintAsBool: false #returns tinyint as bool in dbResultTo(Parsed)Array
     
     schemas:
      test: schema.sql #Filename relative to config.yaml to be used in dbLoadSchema

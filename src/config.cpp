@@ -93,6 +93,7 @@ void Config::reloadConfig() {
     if (!config["global"].IsMap()) throw std::runtime_error("Config Global entry is not a map");
 
     dynamicQueriesEnabled = config["global"]["enableDynamicQueries"].as<bool>(true);
+    parseTinyintAsBool = config["global"]["parseTinyintAsBool"].as<bool>(false);
     dateType = dateTypeFromString(config["global"]["parseDateType"].as<r_string>("string"sv));
 
 #pragma endregion global

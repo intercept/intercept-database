@@ -48,6 +48,10 @@ public:
         return dateType;
     }
 
+    bool getTinyintAsBool() const {
+        return parseTinyintAsBool;
+    }
+
     static void initCommands();
     static inline registered_sqf_function handle_cmd_reloadConfig;
     static inline registered_sqf_function handle_cmd_version;
@@ -57,7 +61,7 @@ private:
     std::map<intercept::types::r_string, intercept::types::r_string> statements;
     std::map<intercept::types::r_string, std::filesystem::path> schemas;
     bool dynamicQueriesEnabled = true;
-
+    bool parseTinyintAsBool = false;
     ConfigDateType dateType = ConfigDateType::humanString;
 
 };

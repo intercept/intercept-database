@@ -155,6 +155,8 @@ game_value Result::cmd_toArray(game_state&, game_value_parameter right) {
     auto_array<game_value> result;
 
     const auto [dateParser, dateTimeParser, timeParser] = getDateParser(Config::get().getDateType());
+    const auto parseTinyintAsBool = Config::get().getTinyintAsBool();
+
     while (res->next()) {
         auto_array<game_value> row;
 
@@ -168,8 +170,18 @@ game_value Result::cmd_toArray(game_state&, game_value_parameter right) {
                     case mariadb::value::string: row.emplace_back(res->get_string(i)); break;
                     case mariadb::value::boolean: row.emplace_back(res->get_boolean(i)); break;
                     case mariadb::value::decimal: row.emplace_back(res->get_decimal(i).float32()); break;
-                    case mariadb::value::unsigned8: row.emplace_back(static_cast<float>(res->get_unsigned8(i))); break;
-                    case mariadb::value::signed8: row.emplace_back(static_cast<float>(res->get_signed8(i))); break;
+                    case mariadb::value::unsigned8: {
+                        if (parseTinyintAsBool && res->column_type_raw(i) == MYSQL_TYPE_TINY)
+                            row.emplace_back(static_cast<bool>(res->get_unsigned8(i)));
+                        else
+                            row.emplace_back(static_cast<float>(res->get_unsigned8(i)));
+                    } break;
+                    case mariadb::value::signed8: {
+                        if (parseTinyintAsBool && res->column_type_raw(i) == MYSQL_TYPE_TINY)
+                            row.emplace_back(static_cast<bool>(res->get_signed8(i)));
+                        else
+                            row.emplace_back(static_cast<float>(res->get_signed8(i)));
+                    }  break;
                     case mariadb::value::unsigned16: row.emplace_back(static_cast<float>(res->get_unsigned16(i))); break;
                     case mariadb::value::signed16: row.emplace_back(static_cast<float>(res->get_signed16(i))); break;
                     case mariadb::value::unsigned32: row.emplace_back(static_cast<float>(res->get_unsigned32(i))); break;
@@ -197,6 +209,7 @@ game_value Result::cmd_toParsedArray(game_state& state, game_value_parameter rig
     auto_array<game_value> result;
 
     const auto [dateParser, dateTimeParser, timeParser] = getDateParser(Config::get().getDateType());
+    const auto parseTinyintAsBool = Config::get().getTinyintAsBool();
 
     while (res->next()) {
         auto_array<game_value> row;
@@ -249,8 +262,18 @@ game_value Result::cmd_toParsedArray(game_state& state, game_value_parameter rig
             case mariadb::value::blob: addParsedString(res->get_blobString(i)); break;
             case mariadb::value::boolean: row.emplace_back(res->get_boolean(i)); break;
             case mariadb::value::decimal: row.emplace_back(res->get_decimal(i).float32()); break;
-            case mariadb::value::unsigned8: row.emplace_back(static_cast<float>(res->get_unsigned8(i))); break;
-            case mariadb::value::signed8: row.emplace_back(static_cast<float>(res->get_signed8(i))); break;
+            case mariadb::value::unsigned8: {
+                if (parseTinyintAsBool && res->column_type_raw(i) == MYSQL_TYPE_TINY)
+                    row.emplace_back(static_cast<bool>(res->get_unsigned8(i)));
+                else
+                    row.emplace_back(static_cast<float>(res->get_unsigned8(i)));
+            } break;
+            case mariadb::value::signed8: {
+                if (parseTinyintAsBool && res->column_type_raw(i) == MYSQL_TYPE_TINY)
+                    row.emplace_back(static_cast<bool>(res->get_signed8(i)));
+                else
+                    row.emplace_back(static_cast<float>(res->get_signed8(i)));
+            }  break;
             case mariadb::value::unsigned16: row.emplace_back(static_cast<float>(res->get_unsigned16(i))); break;
             case mariadb::value::signed16: row.emplace_back(static_cast<float>(res->get_signed16(i))); break;
             case mariadb::value::unsigned32: row.emplace_back(static_cast<float>(res->get_unsigned32(i))); break;
