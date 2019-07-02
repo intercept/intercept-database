@@ -83,7 +83,17 @@ void Config::reloadConfig() {
 
     for (auto& it : config["statements"]) {
         r_string stmtName = it.first.as<r_string>();
-        statements[stmtName] = it.second.as<r_string>();
+        if (it.IsMap()) {
+            if (!it["query"]) throw std::runtime_error(("statement "+stmtName+" has no 'query' entry").c_str());
+
+            statements[stmtName] = {
+                it["query"].as<r_string>(),
+                it["parseTinyintAsBool"].as<bool>(false),
+                dateTypeFromString(config["global"]["parseDateType"].as<r_string>("string"sv))
+            };
+        } else {
+            statements[stmtName] = {it.second.as<r_string>()};
+        }
     }
 
 #pragma endregion statements
@@ -91,6 +101,7 @@ void Config::reloadConfig() {
 #pragma region global
 
     if (!config["global"].IsMap()) throw std::runtime_error("Config Global entry is not a map");
+
 
     dynamicQueriesEnabled = config["global"]["enableDynamicQueries"].as<bool>(true);
     parseTinyintAsBool = config["global"]["parseTinyintAsBool"].as<bool>(false);

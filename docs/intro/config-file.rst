@@ -27,6 +27,10 @@ The InterceptDB Config file
       isThisALongQuery=1 AND
       queriesCanBeMultiline=1 AND
       thatsWhyILikeYAML=5;
+     queryWithOptions:
+      query: SELECT NOW(), tinyIntValue FROM MyTable;
+      parseDateType: array #I want this specific statement to return DateTime values in array format
+      parseTinyintAsBool: true #I want this specific statement to return my tinyInt as a boolean in dbResultTo(Parsed)Array
     
     global:
      enableDynamicQueries: true #Allow queries to be created from SQF, if false only statements from config are allowed
@@ -47,4 +51,4 @@ Config has to be in ``Arma 3/@InterceptDB/config.yaml`` Other subfolders or rena
 
 The config is loaded at preInit. If anything on the config loading fails, a error will be printed to the RPT.
 
-#TODO if people need it, add ability to set connection options in config.
+Per-statement options take precendence over global options

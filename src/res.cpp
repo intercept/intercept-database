@@ -150,12 +150,15 @@ game_value Result::cmd_lastInsertId(game_state&, game_value_parameter right) {
 }
 
 game_value Result::cmd_toArray(game_state&, game_value_parameter right) {
-    auto& res = right.get_as<GameDataDBResult>()->res;
+    auto& gdRes = right.get_as<GameDataDBResult>();
+    auto& res = gdRes->res;
     if (!res) return auto_array<game_value>();
     auto_array<game_value> result;
 
-    const auto [dateParser, dateTimeParser, timeParser] = getDateParser(Config::get().getDateType());
-    const auto parseTinyintAsBool = Config::get().getTinyintAsBool();
+    const auto [dateParser, dateTimeParser, timeParser] = getDateParser(
+        gdRes->statementName.empty() ? Config::get().getDateType() : Config::get().getStatement(gdRes->statementName).dateType);
+    const auto parseTinyintAsBool = 
+        gdRes->statementName.empty() ? Config::get().getTinyintAsBool() : Config::get().getStatement(gdRes->statementName).parseTinyintAsBool;
 
     while (res->next()) {
         auto_array<game_value> row;
@@ -204,12 +207,15 @@ game_value Result::cmd_toArray(game_state&, game_value_parameter right) {
 }
 
 game_value Result::cmd_toParsedArray(game_state& state, game_value_parameter right) {
-    auto& res = right.get_as<GameDataDBResult>()->res;
+    auto& gdRes = right.get_as<GameDataDBResult>();
+    auto& res = gdRes->res;
     if (!res) return auto_array<game_value>();
     auto_array<game_value> result;
 
-    const auto [dateParser, dateTimeParser, timeParser] = getDateParser(Config::get().getDateType());
-    const auto parseTinyintAsBool = Config::get().getTinyintAsBool();
+    const auto [dateParser, dateTimeParser, timeParser] = getDateParser(
+        gdRes->statementName.empty() ? Config::get().getDateType() : Config::get().getStatement(gdRes->statementName).dateType);
+    const auto parseTinyintAsBool = 
+        gdRes->statementName.empty() ? Config::get().getTinyintAsBool() : Config::get().getStatement(gdRes->statementName).parseTinyintAsBool;
 
     while (res->next()) {
         auto_array<game_value> row;

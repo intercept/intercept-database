@@ -16,16 +16,29 @@ enum class ConfigDateType {
 
 ConfigDateType dateTypeFromString(std::string_view str);
 
+class ConfigStatement {
+public:
+    r_string query;
+    bool parseTinyintAsBool = false;
+    ConfigDateType dateType = ConfigDateType::humanString;
+};
+
 
 class Config : public intercept::singleton<Config> {
     
 public:
     void reloadConfig();
 
+    ConfigStatement getStatement(r_string name) {
+        auto found = statements.find(name);
+        if (found == statements.end()) return ConfigStatement();
+        return found->second;
+    }
+
     r_string getQuery(r_string name) {
         auto found = statements.find(name);
         if (found == statements.end()) return r_string();
-        return found->second;
+        return found->second.query;
     }
 
     mariadb::account_ref getAccount(r_string name) {
@@ -58,7 +71,7 @@ public:
 
 private:
     std::map<intercept::types::r_string, mariadb::account_ref> accounts;
-    std::map<intercept::types::r_string, intercept::types::r_string> statements;
+    std::map<intercept::types::r_string, ConfigStatement> statements;
     std::map<intercept::types::r_string, std::filesystem::path> schemas;
     bool dynamicQueriesEnabled = true;
     bool parseTinyintAsBool = false;

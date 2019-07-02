@@ -78,10 +78,13 @@ bool Connection::throwQueryError(game_state& gs, mariadb::connection_ref connect
     return false; //error was not handled and we threw it
 }
 
-GameDataDBAsyncResult* Connection::pushAsyncQuery(game_state& gs, mariadb::connection_ref connection, auto_array<game_value> boundValues, r_string queryString) {
+GameDataDBAsyncResult* Connection::pushAsyncQuery(game_state& gs, mariadb::connection_ref connection, ref<GameDataDBQuery> query) {
     auto gd_res = new GameDataDBAsyncResult();
     gd_res->data = std::make_shared<GameDataDBAsyncResult::dataT>();
 
+    auto_array<game_value> boundValues = query->boundValues;
+    r_string queryString = query->getQueryString();
+    gd_res->data->statementName = query->isConfigQuery ? query->queryString : r_string{};
 
     //If we give them to task, it will destruct the array after task is done, and may call dealloc int he pool allocator
     std::vector<
@@ -209,6 +212,7 @@ public:
             //push result onto stack.
             auto gd_res = new GameDataDBResult();
             gd_res->res = res->data->res;
+            gd_res->statementName = res->data->statementName;
             s->get_vm_context()->scriptStack[_stackEndAtStart] = game_value(gd_res);
             d1 = 2; //done
             //#TODO fix this. Cannot currently because task wants invoker lock, which it won't get while we freeze the game here
@@ -268,6 +272,7 @@ game_value Connection::cmd_execute(game_state& gs, game_value_parameter con, gam
 
             auto gd_res = new GameDataDBResult();
             gd_res->res = res;
+            gd_res->statementName = query->isConfigQuery ? query->queryString : r_string{};
             return gd_res;
         } catch (mariadb::exception::connection& x) {
             throwQueryError(gs, session, static_cast<size_t>(x.error_id()), static_cast<r_string>(x.what()), query->getQueryString());
@@ -281,7 +286,7 @@ game_value Connection::cmd_execute(game_state& gs, game_value_parameter con, gam
 
     auto& cs = gs.get_vm_context()->callstack;
 
-    auto gd_res = pushAsyncQuery(gs, session, query->boundValues, query->getQueryString());
+    auto gd_res = pushAsyncQuery(gs, session, query);
 
     auto newItem = new callstack_item_WaitForQueryResult(gd_res);
     newItem->_parent = cs.back();
@@ -300,7 +305,7 @@ game_value Connection::cmd_executeAsync(game_state& gs, game_value_parameter con
     auto session = con.get_as<GameDataDBConnection>()->session;
     auto query = qu.get_as<GameDataDBQuery>();
 
-    auto gd_res = pushAsyncQuery(gs, session, query->boundValues, query->getQueryString());
+    auto gd_res = pushAsyncQuery(gs, session, query);
     Threading::get().pushAsyncWork(gd_res);
     __itt_task_end(domainConnection);
     return gd_res;

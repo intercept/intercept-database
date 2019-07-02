@@ -9,7 +9,6 @@ using namespace intercept::types;
 
 class Result {
 public:
-
 	static game_value cmd_affectedRows(game_state&, game_value_parameter right);
 	static game_value cmd_lastInsertId(game_state&, game_value_parameter right);
     static game_value cmd_toArray(game_state&, game_value_parameter right);
@@ -70,6 +69,7 @@ public:
     }
 
     mariadb::result_set_ref res;
+    r_string statementName; //Is null if this was not a statement from config
 };
 
 class GameDataDBAsyncResult : public game_data {
@@ -113,6 +113,7 @@ public:
     struct dataT {
         std::future<bool> fut;
         mariadb::result_set_ref res;
+        r_string statementName; //Is null if this was not a statement from config
         game_value callback;
         game_value callbackArgs;
     };
