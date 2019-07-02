@@ -83,13 +83,13 @@ void Config::reloadConfig() {
 
     for (auto& it : config["statements"]) {
         r_string stmtName = it.first.as<r_string>();
-        if (it.IsMap()) {
-            if (!it["query"]) throw std::runtime_error(("statement "+stmtName+" has no 'query' entry").c_str());
+        if (it.second.IsMap()) {
+            if (!it.second["query"]) throw std::runtime_error(("statement "+stmtName+" has no 'query' entry").c_str());
 
             statements[stmtName] = {
-                it["query"].as<r_string>(),
-                it["parseTinyintAsBool"].as<bool>(false),
-                dateTypeFromString(config["global"]["parseDateType"].as<r_string>("string"sv))
+                it.second["query"].as<r_string>(),
+                it.second["parseTinyintAsBool"].as<bool>(false),
+                dateTypeFromString(it.second["parseDateType"].as<r_string>("string"sv))
             };
         } else {
             statements[stmtName] = {it.second.as<r_string>()};
