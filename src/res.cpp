@@ -1,8 +1,127 @@
 #include "res.h"
 #include <mariadb++/result_set.hpp>
 #include "threading.h"
+#include "config.h"
 
 using namespace intercept::client;
+
+
+
+/// date, datetime
+std::tuple<std::function<game_value(const mariadb::date_time&)>,
+    std::function<game_value(const mariadb::date_time&)>,
+    std::function<game_value(const mariadb::time&)>
+> getDateParser(ConfigDateType type) {
+    switch (type) {
+        
+        
+        case ConfigDateType::humanString: 
+        return {
+            [](const mariadb::date_time& date) -> game_value {
+                return date.str();
+            },
+            [](const mariadb::date_time& dateTime) -> game_value {
+                return dateTime.str();
+            },
+            [](const mariadb::time& time) -> game_value {
+                return time.str_time();
+            }
+        };
+        case ConfigDateType::humanStringMS: 
+        return {
+            [](const mariadb::date_time& date) -> game_value {
+                return date.str(true);
+            },
+            [](const mariadb::date_time& dateTime) -> game_value {
+                return dateTime.str(true);
+            },
+            [](const mariadb::time& time) -> game_value {
+                return time.str_time(true);
+            }
+        };
+        case ConfigDateType::array: 
+        return {
+            [](const mariadb::date_time& date) -> game_value {
+                auto_array<game_value> res;
+                res.reserve(7);
+
+                res.emplace_back(date.year());
+                res.emplace_back(date.month());
+                res.emplace_back(date.day());
+                res.emplace_back(date.hour()); //Probably don't need to return this on a date
+                res.emplace_back(date.minute());
+                res.emplace_back(date.second());
+                res.emplace_back(date.millisecond());
+
+                return res;
+            },
+            [](const mariadb::date_time& dateTime) -> game_value {
+                auto_array<game_value> res;
+                res.reserve(7);
+
+                res.emplace_back(dateTime.year());
+                res.emplace_back(dateTime.month());
+                res.emplace_back(dateTime.day());
+                res.emplace_back(dateTime.hour());
+                res.emplace_back(dateTime.minute());
+                res.emplace_back(dateTime.second());
+                res.emplace_back(dateTime.millisecond());
+
+                return res;
+            },
+            [](const mariadb::time& time) -> game_value {
+                auto_array<game_value> res;
+                res.reserve(4);
+                res.emplace_back(time.hour());
+                res.emplace_back(time.minute());
+                res.emplace_back(time.second());
+                res.emplace_back(time.millisecond());
+
+                return res;
+            }
+        };
+        case ConfigDateType::timestamp: 
+        return {
+            [](const mariadb::date_time& date) -> game_value {
+                return static_cast<float>(date.mktime());
+            },
+            [](const mariadb::date_time& dateTime) -> game_value {
+                return static_cast<float>(dateTime.mktime());
+            },
+            [](const mariadb::time& time) -> game_value {
+                return static_cast<float>(time.mktime());
+            }
+        };
+        case ConfigDateType::timestampString: 
+        return {
+            [](const mariadb::date_time& date) -> game_value {
+                return std::to_string(date.mktime());
+            },
+            [](const mariadb::date_time& dateTime) -> game_value {
+                return std::to_string(dateTime.mktime());
+            },
+            [](const mariadb::time& time) -> game_value {
+                return std::to_string(time.mktime());
+            }
+        };
+        case ConfigDateType::timestampStringMS: 
+        return {
+            [](const mariadb::date_time& date) -> game_value {
+                return std::to_string(date.mktime()*1000 + date.millisecond());
+            },
+            [](const mariadb::date_time& dateTime) -> game_value {
+                return std::to_string(dateTime.mktime()*1000 + dateTime.millisecond());
+            },
+            [](const mariadb::time& time) -> game_value {
+                return  std::to_string(time.mktime()*1000 + time.millisecond());
+            }
+        };
+        
+    }
+}
+
+
+
 
 game_data* createGameDataDBResult(param_archive* ar) {
     auto x = new GameDataDBResult();
@@ -35,6 +154,7 @@ game_value Result::cmd_toArray(game_state&, game_value_parameter right) {
     if (!res) return auto_array<game_value>();
     auto_array<game_value> result;
 
+    const auto [dateParser, dateTimeParser, timeParser] = getDateParser(Config::get().getDateType());
     while (res->next()) {
         auto_array<game_value> row;
 
@@ -42,9 +162,9 @@ game_value Result::cmd_toArray(game_state&, game_value_parameter right) {
             try {
                 switch (res->column_type(i)) {
                     case mariadb::value::null: row.emplace_back(game_value{}); break;
-                    case mariadb::value::date: row.emplace_back(res->get_date(i).str()); break;
-                    case mariadb::value::date_time: row.emplace_back(res->get_date_time(i).str()); break;
-                    case mariadb::value::time: row.emplace_back(res->get_time(i).str_time()); break;
+                    case mariadb::value::date: row.emplace_back(dateParser(res->get_date(i))); break;
+                    case mariadb::value::date_time: row.emplace_back(dateTimeParser(res->get_date_time(i))); break;
+                    case mariadb::value::time: row.emplace_back(timeParser(res->get_time(i))); break;
                     case mariadb::value::string: row.emplace_back(res->get_string(i)); break;
                     case mariadb::value::boolean: row.emplace_back(res->get_boolean(i)); break;
                     case mariadb::value::decimal: row.emplace_back(res->get_decimal(i).float32()); break;
@@ -75,6 +195,8 @@ game_value Result::cmd_toParsedArray(game_state& state, game_value_parameter rig
     auto& res = right.get_as<GameDataDBResult>()->res;
     if (!res) return auto_array<game_value>();
     auto_array<game_value> result;
+
+    const auto [dateParser, dateTimeParser, timeParser] = getDateParser(Config::get().getDateType());
 
     while (res->next()) {
         auto_array<game_value> row;
@@ -116,14 +238,13 @@ game_value Result::cmd_toParsedArray(game_state& state, game_value_parameter rig
             }
         };
 
-
         for (size_t i = 0u; i < res->column_count(); ++i) {
 
             switch (res->column_type(i)) {
             case mariadb::value::null: row.emplace_back(game_value{}); break;
-            case mariadb::value::date: row.emplace_back(res->get_date(i).str()); break;
-            case mariadb::value::date_time: row.emplace_back(res->get_date_time(i).str()); break;
-            case mariadb::value::time: row.emplace_back(res->get_time(i).str_time()); break;
+            case mariadb::value::date: row.emplace_back(dateParser(res->get_date(i))); break;
+            case mariadb::value::date_time: row.emplace_back(dateTimeParser(res->get_date_time(i))); break;
+            case mariadb::value::time: row.emplace_back(timeParser(res->get_time(i))); break;
             case mariadb::value::string: addParsedString(res->get_string(i)); break;
             case mariadb::value::blob: addParsedString(res->get_blobString(i)); break;
             case mariadb::value::boolean: row.emplace_back(res->get_boolean(i)); break;

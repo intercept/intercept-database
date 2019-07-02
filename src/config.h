@@ -5,6 +5,18 @@
 #include "mariadb++/account.hpp"
 #include "../intercept/src/client/headers/shared/containers.hpp"
 
+enum class ConfigDateType {
+    humanString,
+    humanStringMS,
+    array,
+    timestamp,
+    timestampString,
+    timestampStringMS
+};
+
+ConfigDateType dateTypeFromString(std::string_view str);
+
+
 class Config : public intercept::singleton<Config> {
     
 public:
@@ -32,6 +44,10 @@ public:
         return dynamicQueriesEnabled;
     }
 
+    ConfigDateType getDateType() const {
+        return dateType;
+    }
+
     static void initCommands();
     static inline registered_sqf_function handle_cmd_reloadConfig;
     static inline registered_sqf_function handle_cmd_version;
@@ -42,6 +58,6 @@ private:
     std::map<intercept::types::r_string, std::filesystem::path> schemas;
     bool dynamicQueriesEnabled = true;
 
-
+    ConfigDateType dateType = ConfigDateType::humanString;
 
 };

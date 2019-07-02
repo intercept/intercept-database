@@ -30,6 +30,13 @@ The InterceptDB Config file
     
     global:
      enableDynamicQueries: true #Allow queries to be created from SQF, if false only statements from config are allowed
+     parseDateType: string #This is a enum, one of the below values is allowed
+     #string: default. Return Date/DateTime as "2018-12-24 13:45:11"
+     #stringMS: Return Date/DateTime as "2018-12-24 13:45:11.123"
+     #array: Return Date/DateTime as [year,month,day,hour,minute,second,millisecond] (yes both have time too, date will be 0 hours) in dbResultTo(Parsed)Array
+     #timestamp: Return Date/DateTime as a timestamp as a number (this can incur precision loss)
+     #timestampString: Return Date/DateTime as a unix timestamp in a string
+     #timestampStringMS: Return Date/DateTime as a millisecond unix timestamp in a string
     
     schemas:
      test: schema.sql #Filename relative to config.yaml to be used in dbLoadSchema

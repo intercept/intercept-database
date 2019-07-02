@@ -24,6 +24,21 @@ namespace YAML {
 }
 
 
+ConfigDateType dateTypeFromString(std::string_view str) {
+    if (str == "string")
+        return ConfigDateType::humanString;
+    if (str == "stringMS")
+        return ConfigDateType::humanStringMS;
+    if (str == "array")
+        return ConfigDateType::array;
+    if (str == "timestamp")
+        return ConfigDateType::timestamp;
+    if (str == "timestampString")
+        return ConfigDateType::timestampString;
+    if (str == "timestampStringMS")
+        return ConfigDateType::timestampStringMS;
+    throw std::invalid_argument("Invalid value passed as parseDateTime entry");
+}
 
 void Config::reloadConfig() {
     std::filesystem::path configFilePath("@InterceptDB/config.yaml");
@@ -33,6 +48,8 @@ void Config::reloadConfig() {
 
     auto stringpath = configFilePath.string();
     YAML::Node config = YAML::LoadFile(configFilePath.string());
+
+#pragma region accounts
 
     if (!config["accounts"].IsMap()) throw std::runtime_error("Config Accounts entry is not a map");
 
@@ -60,15 +77,25 @@ void Config::reloadConfig() {
         accounts[accountName] = acc;
     }
 
+#pragma endregion accounts
+
+#pragma region statements
+
     for (auto& it : config["statements"]) {
         r_string stmtName = it.first.as<r_string>();
         statements[stmtName] = it.second.as<r_string>();
     }
 
+#pragma endregion statements
+
+#pragma region global
+
     if (!config["global"].IsMap()) throw std::runtime_error("Config Global entry is not a map");
 
     dynamicQueriesEnabled = config["global"]["enableDynamicQueries"].as<bool>(true);
+    dateType = dateTypeFromString(config["global"]["parseDateType"].as<r_string>("string"sv));
 
+#pragma endregion global
 
     if (config["schemas"].IsMap())
         for (auto& it : config["schemas"]) {
