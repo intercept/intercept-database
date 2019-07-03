@@ -86,11 +86,14 @@ void Config::reloadConfig() {
         if (it.second.IsMap()) {
             if (!it.second["query"]) throw std::runtime_error(("statement "+stmtName+" has no 'query' entry").c_str());
 
-            statements[stmtName] = {
-                it.second["query"].as<r_string>(),
-                it.second["parseTinyintAsBool"].as<bool>(false),
-                dateTypeFromString(it.second["parseDateType"].as<r_string>("string"sv))
-            };
+            ConfigStatement stmt;
+            stmt.query = it.second["query"].as<r_string>();
+            if (it.second["parseTinyintAsBool"].IsDefined())
+                stmt.parseTinyintAsBool = it.second["parseTinyintAsBool"].as<bool>();
+            if (it.second["parseDateType"].IsDefined())
+                stmt.dateType = dateTypeFromString(it.second["parseDateType"].as<r_string>());
+
+            statements[stmtName] = std::move(stmt);
         } else {
             statements[stmtName] = {it.second.as<r_string>()};
         }

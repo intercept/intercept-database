@@ -155,10 +155,8 @@ game_value Result::cmd_toArray(game_state&, game_value_parameter right) {
     if (!res) return auto_array<game_value>();
     auto_array<game_value> result;
 
-    const auto [dateParser, dateTimeParser, timeParser] = getDateParser(
-        gdRes->statementName.empty() ? Config::get().getDateType() : Config::get().getStatement(gdRes->statementName).dateType);
-    const auto parseTinyintAsBool = 
-        gdRes->statementName.empty() ? Config::get().getTinyintAsBool() : Config::get().getStatement(gdRes->statementName).parseTinyintAsBool;
+    const auto [dateParser, dateTimeParser, timeParser] = getDateParser(Config::get().getDateType(gdRes->statementName));
+    const auto parseTinyintAsBool =  Config::get().getTinyintAsBool(gdRes->statementName);
 
     while (res->next()) {
         auto_array<game_value> row;
@@ -212,10 +210,8 @@ game_value Result::cmd_toParsedArray(game_state& state, game_value_parameter rig
     if (!res) return auto_array<game_value>();
     auto_array<game_value> result;
 
-    const auto [dateParser, dateTimeParser, timeParser] = getDateParser(
-        gdRes->statementName.empty() ? Config::get().getDateType() : Config::get().getStatement(gdRes->statementName).dateType);
-    const auto parseTinyintAsBool = 
-        gdRes->statementName.empty() ? Config::get().getTinyintAsBool() : Config::get().getStatement(gdRes->statementName).parseTinyintAsBool;
+    const auto [dateParser, dateTimeParser, timeParser] = getDateParser(Config::get().getDateType(gdRes->statementName));
+    const auto parseTinyintAsBool = Config::get().getTinyintAsBool(gdRes->statementName);
 
     while (res->next()) {
         auto_array<game_value> row;

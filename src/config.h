@@ -19,8 +19,8 @@ ConfigDateType dateTypeFromString(std::string_view str);
 class ConfigStatement {
 public:
     r_string query;
-    bool parseTinyintAsBool = false;
-    ConfigDateType dateType = ConfigDateType::humanString;
+    std::optional<bool> parseTinyintAsBool;
+    std::optional<ConfigDateType> dateType;
 };
 
 
@@ -61,9 +61,30 @@ public:
         return dateType;
     }
 
+    ConfigDateType getDateType(r_string statementName) const {
+        if (statementName.empty()) return dateType;
+        auto found = statements.find(statementName);
+        if (found == statements.end()) return dateType;
+        if (found->second.dateType)
+            return *found->second.dateType;
+
+        return dateType;
+    }
+
     bool getTinyintAsBool() const {
         return parseTinyintAsBool;
     }
+
+    bool getTinyintAsBool(r_string statementName) const {
+        if (statementName.empty()) return parseTinyintAsBool;
+        auto found = statements.find(statementName);
+        if (found == statements.end()) return parseTinyintAsBool;
+        if (found->second.parseTinyintAsBool)
+            return *found->second.parseTinyintAsBool;
+
+        return parseTinyintAsBool;
+    }
+
 
     static void initCommands();
     static inline registered_sqf_function handle_cmd_reloadConfig;
