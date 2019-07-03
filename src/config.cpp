@@ -147,7 +147,7 @@ void Config::initCommands() {
     
     handle_cmd_reloadConfig = intercept::client::host::register_sqf_command("dbReloadConfig", "TODO", cmd_reloadConfig, game_data_type::STRING);
     handle_cmd_version = intercept::client::host::register_sqf_command("dbVersion", "TODO", [](game_state&) -> game_value {
-                                return "1.3";
+                                return "1.4";
                             }, game_data_type::STRING);
 
 
