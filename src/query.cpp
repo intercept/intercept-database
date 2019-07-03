@@ -136,6 +136,12 @@ game_value Query::cmd_bindNamedValueArray(game_state&, game_value_parameter left
     return {};
 }
 
+game_value Query::cmd_getBoundValues(game_state&, game_value_parameter left) {
+    auto query = left.get_as<GameDataDBQuery>();
+
+    return query->boundValues;
+}
+
 void Query::initCommands() {
     
     auto dbType = host::register_sqf_type("DBQUERRY"sv, "databaseQuery"sv, "TODO"sv, "databaseQuery"sv, createGameDataDBQuery);
@@ -154,6 +160,7 @@ void Query::initCommands() {
     //#TODO only accept string,scalar,bool
     handle_cmd_bindValue = client::host::register_sqf_command("dbBindValue", "TODO", Query::cmd_bindValue, game_data_type::NOTHING, dbType.first, game_data_type::ANY);
     handle_cmd_bindValueArray = client::host::register_sqf_command("dbBindValueArray", "TODO", Query::cmd_bindValueArray, game_data_type::NOTHING, dbType.first, game_data_type::ARRAY);
+    handle_cmd_getBoundValues = client::host::register_sqf_command("dbGetBoundValues", "TODO", Query::cmd_getBoundValues, game_data_type::ARRAY, dbType.first);
 
     //handle_cmd_bindNamedValue = client::host::register_sqf_command("db_bindNamedValue", "TODO", Query::cmd_bindNamedValue, game_data_type::NOTHING, dbType.first, game_data_type::ANY);
     //handle_cmd_bindNamedValueArray = client::host::register_sqf_command("db_bindNamedValueArray", "TODO", Query::cmd_bindNamedValueArray, game_data_type::NOTHING, dbType.first, game_data_type::ARRAY);

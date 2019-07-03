@@ -88,6 +88,15 @@ Example: ``_query = dbPrepareQuery "SELECT ? FROM ? WHERE ?=?"``
 
 .. _dbCopyQuery:
 
+
+dbGetBoundValues query
+~~~~~~~~~~~~~~~~~~~~~~
+
+Returns array of all values currently bound to this query
+
+returns ``<ARRAY>``
+
+
 dbCopyQuery query
 -----------------
 query: ``<QUERY>`` - the query object returned by dbPrepareQuery

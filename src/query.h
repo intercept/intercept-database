@@ -18,7 +18,8 @@ public:
 	static game_value cmd_bindValue(game_state&, game_value_parameter left, game_value_parameter right);
 	static game_value cmd_bindValueArray(game_state&, game_value_parameter left, game_value_parameter right);
 	static game_value cmd_bindNamedValue(game_state&, game_value_parameter left, game_value_parameter right);
-	static game_value cmd_bindNamedValueArray(game_state&, game_value_parameter left, game_value_parameter right);
+    static game_value cmd_bindNamedValueArray(game_state&, game_value_parameter left, game_value_parameter right);
+    static game_value cmd_getBoundValues(game_state&, game_value_parameter left);
 
 
 
@@ -35,7 +36,8 @@ public:
 	static inline types::registered_sqf_function handle_cmd_bindValue;
 	static inline types::registered_sqf_function handle_cmd_bindValueArray;
 	static inline types::registered_sqf_function handle_cmd_bindNamedValue;
-	static inline types::registered_sqf_function handle_cmd_bindNamedValueArray;
+    static inline types::registered_sqf_function handle_cmd_bindNamedValueArray;
+    static inline types::registered_sqf_function handle_cmd_getBoundValues;
 };
 
 class GameDataDBQuery : public game_data {
