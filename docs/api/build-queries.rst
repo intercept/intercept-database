@@ -20,7 +20,7 @@ dbPrepareQuery [query, bindValues]
 Prepares a query and directly binds some values to it.
 
 :query: ``<STRING>`` - The SQL Query String
-:bindValues: ``<ARRAY>`` - List of values to bind to ``?`` in the query string.
+:bindValues: ``<ARRAY>`` - List of values to bind to ``?`` in the query string. See :ref:`dbBindValueArray <dbBindValueArray>` for more information.
 
 Returns: ``<QUERY>``
 
@@ -61,9 +61,12 @@ Returns: ``<QUERY>``
 query dbBindValue value
 ~~~~~~~~~~~~~~~~~~~~~~~
 :query: ``<QUERY>``
-:value: ``<STRING>`` OR ``<NUMBER>`` OR ``<BOOL>`` - Value to bind to the next unbound ``?`` in the query
+:value: ``<STRING>`` OR ``<NUMBER>`` OR ``<BOOL>`` OR ``<ARRAY>`` - Value to bind to the next unbound ``?`` in the query
 
 Returns: ``<NOTHING>``
+
+.. note::
+    ARRAY values are automatically converted to string. Meaning ``[1,2,3]`` will get bound as ``"[1,2,3]"``
 
 .. warning::
     This command modifies the value in ``query``. If you want to keep the old query intact you need to :ref:`dbCopyQuery <dbCopyQuery>` first.
@@ -75,9 +78,12 @@ Binds multiple values to the next ``?`` in the query, in same order as the ``?``
 
 
 :query: ``<QUERY>``
-:value: ``<STRING>`` OR ``<NUMBER>`` OR ``<BOOL>`` - Value to bind to the next unbound ``?`` in the query
+:value: ``<STRING>`` OR ``<NUMBER>`` OR ``<BOOL>`` OR ``<ARRAY>`` - Value to bind to the next unbound ``?`` in the query
 
 Returns: ``<NOTHING>``
+
+.. note::
+    ARRAY values are automatically converted to string. Meaning ``[1,2,3]`` will get bound as ``"[1,2,3]"``
 
 .. warning::
     This command modifies the value in `query`. If you want to keep the old query intact you need to :ref:`dbCopyQuery <dbCopyQuery>` first.

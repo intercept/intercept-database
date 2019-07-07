@@ -72,7 +72,7 @@ bool Connection::throwQueryError(game_state& gs, mariadb::connection_ref connect
             if (res.type_enum() == game_data_type::BOOL && static_cast<bool>(res)) return true; //error was handled
         }
     }
-    auto exText = r_string("Intercept-DB exception ") + errorMessage + "\nat\n" + queryString;
+    auto exText = r_string("Intercept-DB exception: ") + errorMessage + "\nat\n" + queryString;
     gs.set_script_error(game_state::game_evaluator::evaluator_error_type::foreign,
         exText);
     return false; //error was not handled and we threw it
@@ -91,6 +91,7 @@ GameDataDBAsyncResult* Connection::pushAsyncQuery(game_state& gs, mariadb::conne
         std::variant<float, bool, r_string, std::monostate>
     > boundValuesQuery;
 
+    uint32_t idx = 0; //Only for error reporting
     for (auto& it : boundValues) {
         if (it.is_null()) {
             boundValuesQuery.emplace_back(std::monostate());
@@ -98,11 +99,17 @@ GameDataDBAsyncResult* Connection::pushAsyncQuery(game_state& gs, mariadb::conne
         }
 
         switch (it.type_enum()) {
-        case game_data_type::SCALAR: boundValuesQuery.emplace_back(static_cast<float>(it)); break;
-        case game_data_type::BOOL: boundValuesQuery.emplace_back(static_cast<bool>(it)); break;
-        case game_data_type::STRING: boundValuesQuery.emplace_back(static_cast<r_string>(it)); break;
-        default:;
+            case game_data_type::SCALAR: boundValuesQuery.emplace_back(static_cast<float>(it)); break;
+            case game_data_type::BOOL: boundValuesQuery.emplace_back(static_cast<bool>(it)); break;
+            case game_data_type::STRING: boundValuesQuery.emplace_back(static_cast<r_string>(it)); break;
+            case game_data_type::ARRAY: boundValuesQuery.emplace_back(static_cast<r_string>(it)); break;
+            default:
+                throwQueryError(gs, connection, 2,
+                    r_string("Unsupported bind value type. Got "sv) + intercept::types::__internal::to_string(it.type_enum()) + " on index "sv + std::to_string(idx)
+                    + " with value " + static_cast<r_string>(it)
+                    , query->getQueryString());
         }
+        idx++;
     }
 
     gd_res->data->fut = Threading::get().pushTask(connection,
@@ -251,7 +258,6 @@ game_value Connection::cmd_execute(game_state& gs, game_value_parameter con, gam
             auto statement = session->create_statement(query->getQueryString());
 
             if (statement->get_bind_count() != query->boundValues.size()) {
-                invoker_lock l;
                 throwQueryError(gs, session, 2,
                     r_string("Invalid number of bind values. Expected "sv) + std::to_string(statement->get_bind_count()) + " got "sv + std::to_string(query->boundValues.size())
                     , query->getQueryString());
@@ -269,7 +275,12 @@ game_value Connection::cmd_execute(game_state& gs, game_value_parameter con, gam
                     case game_data_type::SCALAR: statement->set_float(idx++, static_cast<float>(it)); break;
                     case game_data_type::BOOL: statement->set_boolean(idx++, static_cast<bool>(it)); break;
                     case game_data_type::STRING: statement->set_string(idx++, static_cast<r_string>(it)); break;
-                    default:;
+                    case game_data_type::ARRAY: statement->set_string(idx++, static_cast<r_string>(it)); break;
+                    default:
+                        throwQueryError(gs, session, 2,
+                            r_string("Unsupported bind value type. Got "sv) + intercept::types::__internal::to_string(it.type_enum()) + " on index "sv + std::to_string(idx)
+                            + " with value " + static_cast<r_string>(it)
+                            ,query->getQueryString());
                 }
             }
 
