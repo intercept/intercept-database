@@ -163,8 +163,10 @@ game_value Result::cmd_toArray(game_state&, game_value_parameter right) {
 
         for (mariadb::u32 i = 0u; i < res->column_count(); ++i) {
             try {
-                switch (res->column_type(i)) {
-                    case mariadb::value::null: row.emplace_back(game_value{}); break;
+                auto type = res->column_type(i);
+                if (res->get_is_null(i)) type = mariadb::value::null;
+
+                switch (type) {
                     case mariadb::value::date: row.emplace_back(dateParser(res->get_date(i))); break;
                     case mariadb::value::date_time: row.emplace_back(dateTimeParser(res->get_date_time(i))); break;
                     case mariadb::value::time: row.emplace_back(timeParser(res->get_time(i))); break;
@@ -254,8 +256,10 @@ game_value Result::cmd_toParsedArray(game_state& state, game_value_parameter rig
         };
 
         for (size_t i = 0u; i < res->column_count(); ++i) {
+            auto type = res->column_type(i);
+            if (res->get_is_null(i)) type = mariadb::value::null;
 
-            switch (res->column_type(i)) {
+            switch (type) {
             case mariadb::value::null: row.emplace_back(game_value{}); break;
             case mariadb::value::date: row.emplace_back(dateParser(res->get_date(i))); break;
             case mariadb::value::date_time: row.emplace_back(dateTimeParser(res->get_date_time(i))); break;
