@@ -260,6 +260,11 @@ game_value Connection::cmd_execute(game_state& gs, game_value_parameter con, gam
 
             uint32_t idx = 0;
             for (auto& it : query->boundValues) {
+                if (it.is_null()) {
+                    statement->set_null(idx++);
+                    continue;
+                }
+
                 switch (it.type_enum()) {
                     case game_data_type::SCALAR: statement->set_float(idx++, static_cast<float>(it)); break;
                     case game_data_type::BOOL: statement->set_boolean(idx++, static_cast<bool>(it)); break;
