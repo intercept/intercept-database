@@ -100,6 +100,7 @@ Returns: ``<RESULT>``
 
 Example: ``_result = dbWaitForResult _asyncResult``;  
 
+.. _dbNull:
 
 dbNull
 ~~~~~~

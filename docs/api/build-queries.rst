@@ -56,8 +56,6 @@ Prepares a query based on details in the :doc:`config file </intro/config-file>`
 Returns: ``<QUERY>``
 
 
-
-
 query dbBindValue value
 ~~~~~~~~~~~~~~~~~~~~~~~
 :query: ``<QUERY>``
@@ -70,6 +68,8 @@ Returns: ``<NOTHING>``
 
 .. warning::
     This command modifies the value in ``query``. If you want to keep the old query intact you need to :ref:`dbCopyQuery <dbCopyQuery>` first.
+
+.. _dbBindValueArray:
 
 query dbBindValueArray [value, value...]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -92,9 +92,6 @@ Example: ``_query = dbPrepareQuery "SELECT ? FROM ? WHERE ?=?"``
 ``_query dbBindValueArray ["data", "table", "value", 5]``
 -> ``SELECT data FROM table WHERE value=5``
 
-.. _dbCopyQuery:
-
-
 dbGetBoundValues query
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -102,6 +99,7 @@ Returns array of all values currently bound to this query
 
 returns ``<ARRAY>``
 
+.. _dbCopyQuery:
 
 dbCopyQuery query
 -----------------
