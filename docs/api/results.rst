@@ -36,7 +36,7 @@ Each row being an array made up of the values in that returned row.
 
 row1 = [value1, value2, value3]  
 
-values can be of type NUMBER, STRING, BOOL, NIL (null values from the database will be returned as nil entries in the array)  
+values can be of type NUMBER, STRING, BOOL, DBNULL (null values from the database will be returned as :ref:`dbNull <dbNull>`)
 
 :result: ``<RESULT>`` - The result  
 
@@ -99,4 +99,26 @@ dbWaitForResult result
 Returns: ``<RESULT>``
 
 Example: ``_result = dbWaitForResult _asyncResult``;  
+
+
+dbNull
+~~~~~~
+
+| Returns a dbNull value (just like ``objNull`` or other Arma null values)
+
+Returns: ``<DBNULL>``
+
+dbNull type can be configured in the :doc:`config file </intro/config-file>` to compare equal to empty string
+
+DBNullEqualEmptyString set to ``true``
+::
+    dbNull == "" //true
+    "" == dbNull //true
+    isNull dbNull //true
+
+DBNullEqualEmptyString set to ``false``
+::
+    dbNull == "" //false
+    "" == dbNull //false
+    isNull dbNull //true
 

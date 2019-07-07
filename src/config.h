@@ -85,6 +85,9 @@ public:
         return parseTinyintAsBool;
     }
 
+    bool getDBNullEqualEmptyString() const {
+        return DBNullEqualEmptyString;
+    }
 
     static void initCommands();
     static inline registered_sqf_function handle_cmd_reloadConfig;
@@ -96,6 +99,7 @@ private:
     std::map<intercept::types::r_string, std::filesystem::path> schemas;
     bool dynamicQueriesEnabled = true;
     bool parseTinyintAsBool = false;
+    bool DBNullEqualEmptyString = false;
     ConfigDateType dateType = ConfigDateType::humanString;
 
 };

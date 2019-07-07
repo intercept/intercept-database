@@ -21,6 +21,8 @@ public:
 	static inline game_data_type GameDataDBResult_typeE;
     static inline sqf_script_type GameDataDBAsyncResult_type;
     static inline game_data_type GameDataDBAsyncResult_typeE;
+    static inline sqf_script_type GameDataDBNull_type;
+    static inline game_data_type GameDataDBNull_typeE;
 
 	static inline types::registered_sqf_function handle_cmd_affectedRows;
 	static inline types::registered_sqf_function handle_cmd_lastInsertId;
@@ -46,7 +48,6 @@ public:
     r_string to_string() const override { return r_string("Use the dbResult* commands to read me"sv); }
     //virtual bool equals(const game_data*) const override; //#TODO isEqualTo on hashMaps would be quite nice I guess?
     const char* type_as_string() const override { return "databaseResult"; }
-    bool is_nil() const override { return false; }
     bool can_serialize() override { return true; }//Setting this to false causes a fail in scheduled and global vars
 
     serialization_return serialize(param_archive& ar) override {
@@ -89,7 +90,6 @@ public:
     r_string to_string() const override { return r_string("TODO"sv); }
     //virtual bool equals(const game_data*) const override; //#TODO isEqualTo on hashMaps would be quite nice I guess?
     const char* type_as_string() const override { return "databaseResultAsync"; }
-    bool is_nil() const override { return false; }
     bool can_serialize() override { return false; }//Setting this to false causes a fail in scheduled and global vars
 
     serialization_return serialize(param_archive& ar) override {
@@ -118,6 +118,32 @@ public:
         game_value callbackArgs;
     };
     std::shared_ptr<dataT> data;
+};
 
+class GameDataDBNull : public game_data {
 
+public:
+    GameDataDBNull() {}
+    void lastRefDeleted() const override { delete this; }
+    const sqf_script_type& type() const override { return Result::GameDataDBNull_type; }
+    ~GameDataDBNull() override {};
+
+    bool get_as_bool() const override { return true; }
+    float get_as_number() const override { return 0.f; }
+    const r_string& get_as_string() const override;
+
+    game_data* copy() const override {
+        return new GameDataDBNull();
+    } //#TODO can't do that dave
+    r_string to_string() const override { return r_string("<dbNull>"sv); }
+    //virtual bool equals(const game_data*) const override; //#TODO isEqualTo on hashMaps would be quite nice I guess?
+    const char* type_as_string() const override { return "dbNull"; }
+    bool can_serialize() override { return false; }//Setting this to false causes a fail in scheduled and global vars
+
+    serialization_return serialize(param_archive& ar) override {
+        game_data::serialize(ar);
+        return serialization_return::no_error;
+    }
+
+    bool equals(const game_data* other) const override;;
 };

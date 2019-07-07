@@ -9,7 +9,7 @@ connection dbExecute query
 
 | This function behaves differently in scheduled and unscheduled.
 | Scheduled: Suspends the script like a sleep/waitUntil would do, and continues once result is ready.
-| Unscheduled: Freezes the game until the result is ready. (You probably want to use `dbExecuteAsync`)
+| Unscheduled: Freezes the game until the result is ready. (You probably want to use :ref:`dbExecuteAsync <dbExecuteAsync>`)
 
 
 :connection: ``<DBConnection>`` - The connection to execute the query on

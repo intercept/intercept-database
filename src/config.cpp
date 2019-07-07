@@ -109,6 +109,7 @@ void Config::reloadConfig() {
     dynamicQueriesEnabled = config["global"]["enableDynamicQueries"].as<bool>(true);
     parseTinyintAsBool = config["global"]["parseTinyintAsBool"].as<bool>(false);
     dateType = dateTypeFromString(config["global"]["parseDateType"].as<r_string>("string"sv));
+    DBNullEqualEmptyString = config["global"]["DBNullEqualEmptyString"].as<bool>(false);
 
 #pragma endregion global
 
