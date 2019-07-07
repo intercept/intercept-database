@@ -62,6 +62,7 @@ Returns: ``<BOOL>``
 
 
 
+.. _dbAddErrorHandler:
 
 connection dbAddErrorHandler code
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -75,6 +76,7 @@ connection dbAddErrorHandler code
 | ``["You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'testQuery5' at line 1",1064,"testQuery5"]``
 | ``["Unknown column 'none' in 'field list'",1054,"SELECT none"]``
 | #TODO add the query config name to _this too. 
+| Error codes are explained on :doc:`config file </api/errors>`
 
 :connection: ``<DBCONNECTION>`` - A connection
 :code: ``<CODE>`` - Script code. 

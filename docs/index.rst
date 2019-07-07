@@ -29,6 +29,7 @@ Welcome to the Intercept Database documentation!
    api/results
    api/misc
    api/future
+   api/errors
 
 
 InterceptDB is a Intercept based SQL Database Plugin for Arma 3

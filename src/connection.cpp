@@ -104,7 +104,7 @@ GameDataDBAsyncResult* Connection::pushAsyncQuery(game_state& gs, mariadb::conne
             case game_data_type::STRING: boundValuesQuery.emplace_back(static_cast<r_string>(it)); break;
             case game_data_type::ARRAY: boundValuesQuery.emplace_back(static_cast<r_string>(it)); break;
             default:
-                throwQueryError(gs, connection, 2,
+                throwQueryError(gs, connection, 3,
                     r_string("Unsupported bind value type. Got "sv) + intercept::types::__internal::to_string(it.type_enum()) + " on index "sv + std::to_string(idx)
                     + " with value " + static_cast<r_string>(it)
                     , query->getQueryString());
@@ -277,7 +277,7 @@ game_value Connection::cmd_execute(game_state& gs, game_value_parameter con, gam
                     case game_data_type::STRING: statement->set_string(idx++, static_cast<r_string>(it)); break;
                     case game_data_type::ARRAY: statement->set_string(idx++, static_cast<r_string>(it)); break;
                     default:
-                        throwQueryError(gs, session, 2,
+                        throwQueryError(gs, session, 3,
                             r_string("Unsupported bind value type. Got "sv) + intercept::types::__internal::to_string(it.type_enum()) + " on index "sv + std::to_string(idx)
                             + " with value " + static_cast<r_string>(it)
                             ,query->getQueryString());

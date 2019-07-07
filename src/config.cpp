@@ -150,6 +150,4 @@ void Config::initCommands() {
     handle_cmd_version = intercept::client::host::register_sqf_command("dbVersion", "TODO", [](game_state&) -> game_value {
                                 return "1.5";
                             }, game_data_type::STRING);
-
-
 }
