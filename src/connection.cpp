@@ -64,7 +64,7 @@ game_data* createGameDataDBConnection(param_archive* ar) {
     return x;
 }
 
-bool Connection::throwQueryError(game_state& gs, mariadb::connection_ref connection, size_t errorID, r_string errorMessage, r_string queryString) {
+bool Connection::throwQueryError(game_state& gs, mariadb::connection_ref connection, size_t errorID, r_string errorMessage, r_string queryString, std::optional<sourcedocpos> sourcePosition) {
     if (connection->account()->hasErrorHandler()) {
         for (auto& it : connection->account()->getErrorHandlers()) {
             auto res = sqf::call(it, { errorMessage, errorID, queryString });
@@ -73,8 +73,12 @@ bool Connection::throwQueryError(game_state& gs, mariadb::connection_ref connect
         }
     }
     auto exText = r_string("Intercept-DB exception: ") + errorMessage + "\nat\n" + queryString;
-    gs.set_script_error(game_state::game_evaluator::evaluator_error_type::foreign,
-        exText);
+    if (sourcePosition)
+        gs.set_script_error(game_state::game_evaluator::evaluator_error_type::foreign,
+            exText, *sourcePosition);
+    else
+        gs.set_script_error(game_state::game_evaluator::evaluator_error_type::foreign,
+            exText);
     return false; //error was not handled and we threw it
 }
 
@@ -112,8 +116,10 @@ GameDataDBAsyncResult* Connection::pushAsyncQuery(game_state& gs, mariadb::conne
         idx++;
     }
 
+    auto sourcePos = gs.get_vm_context()->sdocpos;
+
     gd_res->data->fut = Threading::get().pushTask(connection,
-        [queryString, boundValuesQuery, result = gd_res->data, &gs](mariadb::connection_ref con) -> bool {
+        [queryString, boundValuesQuery, result = gd_res->data, &gs, sourcePos](mariadb::connection_ref con) -> bool {
         try {
             auto statement = con->create_statement(queryString);
 
@@ -121,7 +127,7 @@ GameDataDBAsyncResult* Connection::pushAsyncQuery(game_state& gs, mariadb::conne
                 invoker_lock l;
                 throwQueryError(gs, con, 2, 
                     r_string("Invalid number of bind values. Expected "sv)+std::to_string(statement->get_bind_count())+" got "sv+std::to_string(boundValuesQuery.size())
-                    , queryString);
+                    , queryString, sourcePos);
                 return false;
             }
             uint32_t idx = 0;
@@ -145,12 +151,12 @@ GameDataDBAsyncResult* Connection::pushAsyncQuery(game_state& gs, mariadb::conne
         }
         catch (mariadb::exception::connection& x) {
             invoker_lock l;
-            throwQueryError(gs, con, static_cast<size_t>(x.error_id()), static_cast<r_string>(x.what()), queryString);
+            throwQueryError(gs, con, static_cast<size_t>(x.error_id()), static_cast<r_string>(x.what()), queryString, sourcePos);
             return false;
         }
         catch (std::out_of_range& x) {
             invoker_lock l;
-            throwQueryError(gs, con, 1337, static_cast<r_string>(x.what()), queryString);
+            throwQueryError(gs, con, 1337, static_cast<r_string>(x.what()), queryString, sourcePos);
             return false;
         }
     }, true);
