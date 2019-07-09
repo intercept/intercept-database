@@ -7,6 +7,7 @@
 #include "threading.h"
 #include "ittnotify.h"
 #include <fstream>
+#include "logger.h"
 
 __itt_domain* domainConnection = __itt_domain_create("connection");
 
@@ -146,6 +147,33 @@ GameDataDBAsyncResult* Connection::pushAsyncQuery(game_state& gs, mariadb::conne
                         static_assert(false, "non-exhaustive visitor!");
                     }, it);
             }
+
+            if (Logger::get().isQueryLogEnabled()) {
+                if (boundValuesQuery.empty())
+                    Logger::get().logQuery("ASYNC " + queryString);
+                else {
+                    std::string boundValuesString;
+            
+                    for (auto& it : boundValuesQuery) {
+                        std::visit([&boundValuesString](auto && arg) {
+                            using T = std::decay_t<decltype(arg)>;
+                            if constexpr (std::is_same_v<T, float> || std::is_same_v<T, bool>)
+                                boundValuesString += std::to_string(arg)+ ",";
+                            else if constexpr (std::is_same_v<T, r_string>)
+                                boundValuesString += arg + ",";
+                            else if constexpr (std::is_same_v<T, std::monostate>)
+                                boundValuesString += "null,";
+                            else
+                                static_assert(false, "non-exhaustive visitor!");
+                        }, it);
+                    }
+                    boundValuesString.pop_back();
+                    boundValuesString += "]";
+
+                    Logger::get().logQuery("ASYNC " + queryString + "\t bound values ["sv +boundValuesString);
+                }
+            }
+
             result->res = statement->query();
             return true;
         }
@@ -289,6 +317,20 @@ game_value Connection::cmd_execute(game_state& gs, game_value_parameter con, gam
                             ,query->getQueryString());
                 }
             }
+
+            if (Logger::get().isQueryLogEnabled()) {
+                if (query->boundValues.empty())
+                    Logger::get().logQuery(query->getQueryString());
+                else {
+                    //Yeah this is cheaty, but whatever
+                    r_string boundValuesString = static_cast<r_string>(game_value(query->boundValues));
+
+                    Logger::get().logQuery(query->getQueryString() + "\t bound values "sv +boundValuesString);
+                }
+            }
+
+
+
 
             auto res = statement->query();
 

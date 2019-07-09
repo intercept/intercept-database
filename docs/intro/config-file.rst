@@ -43,6 +43,9 @@ The InterceptDB Config file
       #timestampStringMS: Return Date/DateTime as a millisecond unix timestamp in a string
      parseTinyintAsBool: false #returns tinyint as bool in dbResultTo(Parsed)Array
      DBNullEqualEmptyString: false #whether dbNull == "" returns true
+     logging:
+      directory: dbLog #logging directory, relative to arma directory, will be created if it doesn't exist
+      querylog: false #log all queries with timestamp
     
     schemas:
      test: schema.sql #Filename relative to config.yaml to be used in dbLoadSchema

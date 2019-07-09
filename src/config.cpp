@@ -1,6 +1,7 @@
 #include "config.h"
 #include <filesystem>
 #include "yaml-cpp/yaml.h"
+#include "logger.h"
 
 
 namespace YAML {
@@ -103,13 +104,26 @@ void Config::reloadConfig() {
 
 #pragma region global
 
-    if (!config["global"].IsMap()) throw std::runtime_error("Config Global entry is not a map");
+    auto globalConf = config["global"];
+
+    if (!globalConf.IsMap()) throw std::runtime_error("Config Global entry is not a map");
 
 
-    dynamicQueriesEnabled = config["global"]["enableDynamicQueries"].as<bool>(true);
-    parseTinyintAsBool = config["global"]["parseTinyintAsBool"].as<bool>(false);
-    dateType = dateTypeFromString(config["global"]["parseDateType"].as<r_string>("string"sv));
-    DBNullEqualEmptyString = config["global"]["DBNullEqualEmptyString"].as<bool>(false);
+    dynamicQueriesEnabled = globalConf["enableDynamicQueries"].as<bool>(true);
+    parseTinyintAsBool = globalConf["parseTinyintAsBool"].as<bool>(false);
+    dateType = dateTypeFromString(globalConf["parseDateType"].as<r_string>("string"sv));
+    DBNullEqualEmptyString = globalConf["DBNullEqualEmptyString"].as<bool>(false);
+
+    auto loggingConf = globalConf["logging"];
+
+    if (loggingConf.IsDefined()) {
+        if (!loggingConf.IsMap()) throw std::runtime_error("Config Logging entry is not a map");
+
+        auto directory = loggingConf["directory"].as<r_string>("dbLog"sv);
+        Logger::get().init(directory.operator std::basic_string_view<char>());
+        Logger::get().setQueryLogEnabled(loggingConf["querylog"].as<bool>(false));
+    }
+
 
 #pragma endregion global
 
