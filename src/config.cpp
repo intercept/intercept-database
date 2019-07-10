@@ -122,6 +122,7 @@ void Config::reloadConfig() {
         auto directory = loggingConf["directory"].as<r_string>("dbLog"sv);
         Logger::get().init(directory.operator std::basic_string_view<char>());
         Logger::get().setQueryLogEnabled(loggingConf["querylog"].as<bool>(false));
+        Logger::get().setThreadLogEnabled(loggingConf["threadlog"].as<bool>(false));
     }
 
 

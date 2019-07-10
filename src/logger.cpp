@@ -14,7 +14,22 @@ void Logger::logQuery(intercept::types::r_string message) {
     std::unique_lock lock(queryLog_lock);
     if (!queryLog) return;
 
-    std::time_t t = std::time(0);   // get time now
+    pushTimestamp(*queryLog);
+
+    *queryLog << message.c_str() << "\n";
+}
+
+void Logger::logThread(intercept::types::r_string message) {
+    std::unique_lock lock(threadLog_lock);
+    if (!threadLogEnabled) return;
+
+    pushTimestamp(*threadLog);
+
+    *threadLog << message.c_str() << "\n";
+}
+
+void Logger::pushTimestamp(std::ostream& str) const {
+      std::time_t t = std::time(0);   // get time now
     std::tm* now = std::localtime(&t);
 
     auto currentTime = std::chrono::system_clock::now();
@@ -22,16 +37,25 @@ void Logger::logQuery(intercept::types::r_string message) {
     auto timeT = std::chrono::system_clock::to_time_t(currentTime);
 
     char buffer [84];
-    auto leng = strftime(buffer, 80, "%Y-%m-%d %H:%M:%S", localtime(&timeT));
+    auto leng = strftime(buffer, 80, "%Y-%m-%d %H:%02M:%S", localtime(&timeT));
     sprintf(&buffer[leng-1], ".%03lld", millisSinceEpoch - timeT*1000);
 
-    *queryLog << "["sv << buffer << "] "sv << message.c_str() << "\n";
+    str << "["sv << buffer << "] "sv;
 }
 
 void Logger::refreshLogfiles() {
-    std::unique_lock lock(queryLog_lock);
-    if (queryLog) queryLog.reset();
+    {
+        std::unique_lock lock(queryLog_lock);
+        if (queryLog) queryLog.reset();
 
-    if (queryLogEnabled)
-        queryLog = std::make_unique<std::ofstream>(outputDirectory/"query.log", std::ofstream::app);
+        if (queryLogEnabled)
+            queryLog = std::make_unique<std::ofstream>(outputDirectory/"query.log", std::ofstream::app);
+    }
+    {
+        std::unique_lock lock(threadLog_lock);
+        if (threadLog) threadLog.reset();
+
+        if (threadLogEnabled)
+            threadLog = std::make_unique<std::ofstream>(outputDirectory/"thread.log", std::ofstream::app);
+    }
 }

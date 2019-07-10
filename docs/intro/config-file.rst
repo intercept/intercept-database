@@ -46,6 +46,7 @@ The InterceptDB Config file
      logging:
       directory: dbLog #logging directory, relative to arma directory, will be created if it doesn't exist
       querylog: false #log all queries with timestamp
+      threadlog: false #log threading activity (high bandwidth log)
     
     schemas:
      test: schema.sql #Filename relative to config.yaml to be used in dbLoadSchema

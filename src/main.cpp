@@ -14,7 +14,7 @@ int intercept::api_version() { //This is required for the plugin to work.
 }
 
 void intercept::register_interfaces() {
-    
+
 }
 
 void intercept::pre_start() {

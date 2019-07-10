@@ -119,6 +119,8 @@ GameDataDBAsyncResult* Connection::pushAsyncQuery(game_state& gs, mariadb::conne
 
     auto sourcePos = gs.get_vm_context()->sdocpos;
 
+    if (Logger::get().isThreadLogEnabled()) Logger::get().logThread("pushTask "+queryString);
+
     gd_res->data->fut = Threading::get().pushTask(connection,
         [queryString, boundValuesQuery, result = gd_res->data, &gs, sourcePos](mariadb::connection_ref con) -> bool {
         try {

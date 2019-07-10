@@ -1,16 +1,20 @@
 #include "threading.h"
 #include "ittnotify.h"
 #include "../ittnotify/ittnotify.h"
+#include "logger.h"
 using namespace std::chrono_literals;
 
 #include <iomanip> // put_time
 #include <windows.h>
+
+#define LOG_Thread(x) if (Logger::get().isThreadLogEnabled()) Logger::get().logThread((r_string)x)
+
 void logMessageWithTime(std::string msg) {
     return;
     auto now = std::chrono::system_clock::now();
     auto in_time_t = std::chrono::system_clock::to_time_t(now);
 
-    std::chrono::milliseconds ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
     std::size_t fractional_seconds = ms.count() % 1000;
 
 
@@ -31,10 +35,12 @@ __itt_string_handle* worker_processTaskTask = __itt_string_handle_create("Worker
 __itt_string_handle* worker_cleanup = __itt_string_handle_create("Worker::run::cleanup");
 
 Worker::Worker() {
+    LOG_Thread("Worker created "+std::to_string(reinterpret_cast<uintptr_t>(this)));
     __itt_sync_create(&taskLock, "std:::mutex", "Worker::taskLock", __itt_attr_mutex);
 }
 
 Worker::~Worker() {
+    LOG_Thread("Worker destroying "+std::to_string(reinterpret_cast<uintptr_t>(this)));
     if (myThread) {
         std::unique_lock l(taskLock);
         parentConnection.reset();
@@ -58,7 +64,7 @@ void Worker::run() {
         auto parentCon = parentConnection.lock();
 
         if (!parentCon) {//If parent got deleted (went out of scope in SQF land) we want to exit too
-            logMessageWithTime("Worker::lostparent");
+            LOG_Thread("Worker::lostparent "+std::to_string(reinterpret_cast<uintptr_t>(this)));
             __itt_task_begin(domain, __itt_null, __itt_null, worker_cleanup);
             exiting = true; //#TODO going out of scope doesn't work
             while (!tasks.empty()) {
@@ -70,7 +76,7 @@ void Worker::run() {
             __itt_task_end(domain); //end worker_run task
             __itt_sync_releasing(&taskLock);
             __itt_counter_destroy(counter);
-            return; 
+            return;
         }
 
         if (tasks.empty()) {
@@ -88,7 +94,7 @@ void Worker::run() {
             lastJob = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
             __itt_sync_releasing(&taskLock);
             l.unlock();
-            logMessageWithTime("do task");
+            LOG_Thread("Worker::dotask W"+std::to_string(reinterpret_cast<uintptr_t>(this)) + " T"+std::to_string(reinterpret_cast<uintptr_t>(task.get())));
             __itt_task_begin(domain, __itt_null, __itt_null, worker_runTask);
             task->prom.set_value(task->job(workerConnection));
             __itt_task_end(domain);
@@ -100,8 +106,7 @@ void Worker::run() {
                     rememberUpdateWorklist = true;
             }
 
-
-            logMessageWithTime("task done");
+            LOG_Thread("Worker::taskdone W"+std::to_string(reinterpret_cast<uintptr_t>(this)) + " T"+std::to_string(reinterpret_cast<uintptr_t>(task.get())));
         }
 
         if (rememberUpdateWorklist) {
@@ -129,6 +134,8 @@ std::future<bool> Worker::pushTask(std::function<bool(mariadb::connection_ref)> 
     newTask->job = std::move(task);
     newTask->isInWorkList = intoWorkList;
     auto fut = newTask->prom.get_future();
+
+    LOG_Thread("Worker::pushTask W"+std::to_string(reinterpret_cast<uintptr_t>(this)) + " T"+std::to_string(reinterpret_cast<uintptr_t>(newTask.get())));
 
     __itt_sync_prepare(&taskLock);
     std::unique_lock l(taskLock);
@@ -191,8 +198,12 @@ void Threading::doCleanup() {
         if (!worker->tasks.empty()) continue; //Is still working on tasks
         logMessageWithTime("worker cleanup check");
         auto lastTask = std::chrono::system_clock::from_time_t(worker->lastJob);
+        LOG_Thread("Worker::cleanupCheck W"+std::to_string(reinterpret_cast<uintptr_t>(worker.get())) + " LastTask "+ 
+        std::to_string(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - lastTask).count())+"s"
+        );
         if (lastTask + 60s < std::chrono::system_clock::now()) { //no tasks for 60s, kill worker
-            logMessageWithTime("worker do cleanup");
+            LOG_Thread("Worker::doCleanup W"+std::to_string(reinterpret_cast<uintptr_t>(worker.get())));
+            //logMessageWithTime("worker do cleanup");
             __itt_task_begin(domain, __itt_null, __itt_null, threading_doCleanup_workerDoCleanup);
             worker->parentConnection.reset(); //no parent will mean it exits next iteration
             __itt_sync_releasing(&worker->taskLock);
@@ -201,7 +212,7 @@ void Threading::doCleanup() {
             if (worker->myThread->joinable()) worker->myThread->join(); //wait for thread to exit
             workers.erase(acc);
             __itt_task_end(domain);
-            logMessageWithTime("worker cleaned up");
+            LOG_Thread("Worker::cleanupDone W"+std::to_string(reinterpret_cast<uintptr_t>(worker.get())));
 
             __itt_task_end(domain);
             return;
@@ -232,8 +243,6 @@ void Threading::updateAsyncWorkLists() {
     __itt_task_begin(domain, __itt_null, __itt_null, threading_updateAsyncWorkLists);
     std::unique_lock l(asyncWorkMutex);
 
-
-
     auto p = std::stable_partition(asyncWork.begin(), asyncWork.end(),
         [&](const auto& x) { 
             auto res = x->data->fut.wait_for(std::chrono::nanoseconds(0));
@@ -248,10 +257,11 @@ void Threading::updateAsyncWorkLists() {
     //better do it here than in mainthread
     hasCompletedAsyncWork = !completedAsyncTasks.empty();
     uint64_t sz = completedAsyncTasks.size();
+
+    LOG_Thread("Threading::updatedAsyncWorklist waitingResults "+std::to_string(sz));
     __itt_counter_set_value(counter, &sz);
 
     __itt_task_end(domain);
     if (asyncWork.empty())
         __itt_pause();
-
 }
