@@ -168,7 +168,11 @@ std::future<bool> Threading::pushTask(mariadb::connection_ref con, std::function
     auto found = workers.find(con->account());
     if (found != workers.end()) {
 
-        if (found->second.size() == Config::get().getWorkerCount()) {
+        auto activeWorkerCount = std::count_if(found->second.begin(), found->second.end(), [](const std::shared_ptr<Worker>& w) {
+            return !w->exiting;
+        });
+
+        if (activeWorkerCount >= Config::get().getWorkerCount()) {
             const auto it = std::min_element(found->second.begin(), found->second.end(), [](const std::shared_ptr<Worker>& l, const std::shared_ptr<Worker>& r) {
                 if (l->exiting) return false;
                 if (r->exiting) return true;
@@ -257,8 +261,7 @@ bool Threading::isConnected(mariadb::account_ref acc) {
 }
 
 void Threading::pushAsyncWork(ref<GameDataDBAsyncResult> work) {
-    //std::unique_lock l(asyncWorkMutex);
-    //Only called from main thread
+    std::unique_lock l(asyncWorkMutex);
     asyncWork.emplace_back(work);
 }
 __itt_string_handle* threading_updateAsyncWorkLists = __itt_string_handle_create("Threading::updateAsyncWorkLists");
