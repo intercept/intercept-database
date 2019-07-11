@@ -72,6 +72,8 @@ void Config::reloadConfig() {
         auto acc = mariadb::account::create(ip, user, password, database, port);
         acc->set_connect_option(MYSQL_SET_CHARSET_NAME, r_string("utf8mb4"sv));
         acc->set_connect_option(MYSQL_OPT_RECONNECT, true);
+        if (value["opt_compress"].as<bool>(false))
+            acc->set_connect_option(MYSQL_OPT_COMPRESS, true);
         //acc->set_connect_option(MARIADB_OPT_MULTI_STATEMENTS, true);
         //acc->set_connect_option(MARIADB_OPT_MULTI_RESULTS, true);
         //acc->set_auto_commit(false);

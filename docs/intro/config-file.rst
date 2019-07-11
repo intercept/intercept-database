@@ -16,6 +16,7 @@ The InterceptDB Config file
       password: lulz
       database: production
       port: 3306 #optional
+      opt_compress: false #set the MYSQL_OPT_COMPRESS option
     
     statements:
      insertStuff: INSERT INTO table (a,b,c) VALUES (?,?,?)
