@@ -147,13 +147,13 @@ game_data* createGameDataDBNull(param_archive* ar) {
 game_value Result::cmd_affectedRows(game_state&, game_value_parameter right) {
     auto& res = right.get_as<GameDataDBResult>()->res;
 
-    return res->row_count();
+    return static_cast<float>(res->row_count());
 }
 
 game_value Result::cmd_lastInsertId(game_state&, game_value_parameter right) {
     auto& res = right.get_as<GameDataDBResult>()->res;
 
-    return res->get_last_insert_id();
+    return static_cast<float>(res->get_last_insert_id());
 }
 
 game_value Result::cmd_toArray(game_state&, game_value_parameter right) {

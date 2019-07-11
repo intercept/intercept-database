@@ -3,7 +3,6 @@
 #include "query.h"
 #include "res.h"
 #include "mariadb++/exceptions.hpp"
-#include <winsock2.h>
 #include "threading.h"
 #include "ittnotify.h"
 #include <fstream>
@@ -145,8 +144,10 @@ GameDataDBAsyncResult* Connection::pushAsyncQuery(game_state& gs, mariadb::conne
                         statement->set_string(idx++, arg);
                     else if constexpr (std::is_same_v<T, std::monostate>)
                         statement->set_null(idx++);
+                #ifdef _MSVC_LANG
                     else
                         static_assert(false, "non-exhaustive visitor!");
+                #endif
                     }, it);
             }
 
@@ -165,8 +166,10 @@ GameDataDBAsyncResult* Connection::pushAsyncQuery(game_state& gs, mariadb::conne
                                 boundValuesString += arg + ",";
                             else if constexpr (std::is_same_v<T, std::monostate>)
                                 boundValuesString += "null,";
+                        #ifdef _MSVC_LANG
                             else
                                 static_assert(false, "non-exhaustive visitor!");
+                        #endif
                         }, it);
                     }
                     boundValuesString.pop_back();
@@ -244,7 +247,7 @@ public:
     int getVariables(const IDebugVariable** storage, int count) const override { return 0; };
     types::__internal::I_debug_value::RefType EvaluateExpression(const char* code, unsigned rad) override { return {}; };
     void getSourceDocPosition(char* file, int fileSize, int& line) override {};
-    IDebugScope* getParent() override { __debugbreak(); return nullptr; };
+    IDebugScope* getParent() override { return nullptr; };
     r_string get_type() const override { return "stuff"sv; }
 
 
@@ -436,7 +439,7 @@ game_value Connection::cmd_loadSchema(game_state& gs, game_value_parameter con, 
 
     if (!gs.get_vm_context()->is_scheduled()) { 
         try {
-            return session->execute(static_cast<r_string>(str));;
+            return static_cast<float>(session->execute(static_cast<r_string>(str)));
         }
         catch (mariadb::exception::connection & x) {
             invoker_lock l;

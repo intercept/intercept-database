@@ -2,7 +2,6 @@
 
 #include <fstream>
 #include <ctime>
-#include <Windows.h>
 
 void Logger::init(std::filesystem::path outputDir) {
     std::filesystem::create_directories(outputDir);

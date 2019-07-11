@@ -55,15 +55,50 @@ set_target_properties(${INTERCEPT_PLUGIN_NAME} PROPERTIES PREFIX "")
 set_target_properties(${INTERCEPT_PLUGIN_NAME} PROPERTIES FOLDER "${CMAKE_PROJECT_NAME}")
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-	set(CMAKE_CXX_FLAGS "-std=c++1z -O2 -s -fPIC -fpermissive -static-libgcc -static-libstdc++")#-march=i686 -m32
+	add_compile_definitions(__linux__)
+
+	target_compile_options(
+		${INTERCEPT_PLUGIN_NAME} PRIVATE 
+		"-std=c++1z"
+		"$<$<CONFIG:Release>:-O3>"
+		"-s"
+		"-fPIC"
+		"-fpermissive"
+		"-static-libgcc"
+		"-static-libstdc++"
+		"-march=i686"
+		"-m32"
+		"-Wno-ignored-attributes"
+		"-static"
+		"$<$<CONFIG:Release>:-ffunction-sections>"
+		"$<$<CONFIG:Release>:-fdata-sections>"
+
+	)
+	target_link_options(${INTERCEPT_PLUGIN_NAME} PRIVATE "-m32" "-fPIC" "-static" "-static-libgcc" "-static-libstdc++"
+	"$<$<CONFIG:Release>:-Wl,--gc-sections>"
+	"$<$<CONFIG:Release>:-Wl,--strip-all>"
+	) 
 	set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-	target_link_options(${INTERCEPT_PLUGIN_NAME} PRIVATE "-static" "-static-libgcc" "-static-libstdc++")
+
+	target_link_libraries(${INTERCEPT_PLUGIN_NAME} "libstdc++.a")
+
 else()
-	set(CMAKE_CXX_FLAGS_DEBUG "/D_DEBUG /MTd /Zi /Ob0 /Od /RTC1 /MP /EHsc")
-	set(CMAKE_CXX_FLAGS_RELEASE "/MT /Zi /O2 /Ob1 /EHsc /MP") #with debug info
-    set(CMAKE_C_FLAGS_DEBUG "/D_DEBUG /MTd /Zi /Ob0 /Od /RTC1 /MP /EHsc")
-	set(CMAKE_C_FLAGS_RELEASE "/MT /Zi /O2 /Ob1 /EHsc /MP") #with debug info
-	target_link_options(${INTERCEPT_PLUGIN_NAME} PRIVATE "/OPT:REF" "/OPT:ICF" "/DEBUG:FULL")
+	target_compile_options(
+		${INTERCEPT_PLUGIN_NAME} PRIVATE 
+		"/MP" "/Zi"
+		"$<$<CONFIG:Release>:/MT>"
+		"$<$<CONFIG:Release>:/Ox>"
+		"$<$<CONFIG:Release>:/Ob2>"
+		"$<$<CONFIG:Release>:/Oi>"
+		"$<$<CONFIG:Release>:/Ot>"
+	)
+	target_link_options(${INTERCEPT_PLUGIN_NAME} PRIVATE "/OPT:REF" "/OPT:ICF" "/DEBUG:FULL") 
+endif()
+
+
+if(CMAKE_COMPILER_IS_GNUCXX)
+	set_target_properties(${INTERCEPT_NETWORK_NAME} PROPERTIES LINK_SEARCH_START_STATIC 1)
+	set_target_properties(${INTERCEPT_NETWORK_NAME} PROPERTIES LINK_SEARCH_END_STATIC 1)
 endif()
 
 #Binary signing

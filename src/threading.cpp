@@ -5,7 +5,9 @@
 using namespace std::chrono_literals;
 
 #include <iomanip> // put_time
+#ifdef _MSVC_LANG
 #include <windows.h>
+#endif
 
 #define LOG_Thread(x) if (Logger::get().isThreadLogEnabled()) Logger::get().logThread((r_string)x)
 
@@ -22,7 +24,9 @@ void logMessageWithTime(std::string msg) {
     std::stringstream ss;
     ss << msg << " " << std::put_time(std::localtime(&in_time_t), "%H:%M:%S.") << fractional_seconds << "\n";
 
+    #ifdef _MSVC_LANG
     OutputDebugStringA(ss.str().c_str());
+    #endif
 }
 
 

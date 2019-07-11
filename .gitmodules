@@ -3,7 +3,7 @@
 	url = https://github.com/intercept/intercept.git
 [submodule "mariadb-connector-c"]
 	path = mariadb-connector-c
-	url = https://github.com/MariaDB/mariadb-connector-c
+	url = https://github.com/dedmen/mariadb-connector-c.git
 [submodule "mariadbpp"]
 	path = mariadbpp
 	url = https://github.com/dedmen/mariadbpp
@@ -12,4 +12,4 @@
 	url = https://github.com/wolfSSL/wolfssl
 [submodule "yaml-cpp"]
 	path = yaml-cpp
-	url = https://github.com/jbeder/yaml-cpp.git
+	url = https://github.com/dedmen/yaml-cpp.git

@@ -32,13 +32,13 @@ void intercept::pre_init() {
         sqf::diag_log("Database config error " + x.msg + " in L" + std::to_string(x.mark.line));
         sqf::system_chat("Database config error " + x.msg + " in L" + std::to_string(x.mark.line));
     }
-    catch (std::runtime_error& x) {
-        sqf::diag_log(r_string("Database config error ") + x.what());
-        sqf::system_chat(r_string("Database config error ") + x.what());
-    }
     catch (YAML::ParserException& x) {
         sqf::diag_log("Database config error " + x.msg + " in L" + std::to_string(x.mark.line));
         sqf::system_chat("Database config error " + x.msg + " in L" + std::to_string(x.mark.line));
+    }
+    catch (std::runtime_error& x) {
+        sqf::diag_log(r_string("Database config error ") + x.what());
+        sqf::system_chat(r_string("Database config error ") + x.what());
     }
 
     intercept::sqf::system_chat("Intercept database has been loaded");

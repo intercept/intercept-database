@@ -11,7 +11,7 @@ using namespace intercept::types;
 class Connection {
 public:
     static bool throwQueryError(game_state& gs, mariadb::connection_ref connection, size_t errorID, r_string errorMessage, r_string queryString, std::optional<sourcedocpos> sourcePosition = {});
-    static [[nodiscard]] GameDataDBAsyncResult* pushAsyncQuery(game_state& gs, mariadb::connection_ref connection, ref<GameDataDBQuery> query);
+    [[nodiscard]] static GameDataDBAsyncResult* pushAsyncQuery(game_state& gs, mariadb::connection_ref connection, ref<GameDataDBQuery> query);
 
     static game_value cmd_createConnectionArray(game_state&, game_value_parameter right);
     static game_value cmd_createConnectionConfig(game_state&, game_value_parameter right);

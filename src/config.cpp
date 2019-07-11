@@ -54,7 +54,7 @@ void Config::reloadConfig() {
 
     if (!config["accounts"].IsMap()) throw std::runtime_error("Config Accounts entry is not a map");
 
-    for (auto& it : config["accounts"]) {
+    for (const auto& it : config["accounts"]) {
         r_string accountName = it.first.as<r_string>();
         auto value = it.second;
 
@@ -82,7 +82,7 @@ void Config::reloadConfig() {
 
 #pragma region statements
 
-    for (auto& it : config["statements"]) {
+    for (const auto& it : config["statements"]) {
         r_string stmtName = it.first.as<r_string>();
         if (it.second.IsMap()) {
             if (!it.second["query"]) throw std::runtime_error(("statement "+stmtName+" has no 'query' entry").c_str());
@@ -129,7 +129,7 @@ void Config::reloadConfig() {
 #pragma endregion global
 
     if (config["schemas"].IsMap())
-        for (auto& it : config["schemas"]) {
+        for (const auto& it : config["schemas"]) {
             r_string schemaName = it.first.as<r_string>();
             auto value = it.second;
 
