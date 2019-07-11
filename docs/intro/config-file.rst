@@ -17,6 +17,9 @@ The InterceptDB Config file
       database: production
       port: 3306 #optional
       opt_compress: false #set the MYSQL_OPT_COMPRESS option
+      #opt_read_timeout: 5 #set the MYSQL_OPT_READ_TIMEOUT option
+      #opt_write_timeout: 5 #set the MYSQL_OPT_WRITE_TIMEOUT option
+      #opt_multi_statement: false #set the MARIADB_OPT_MULTI_STATEMENTS and MARIADB_OPT_MULTI_RESULTS option. I think this is broken, you can try it if you want though.
     
     statements:
      insertStuff: INSERT INTO table (a,b,c) VALUES (?,?,?)

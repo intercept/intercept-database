@@ -74,8 +74,16 @@ void Config::reloadConfig() {
         acc->set_connect_option(MYSQL_OPT_RECONNECT, true);
         if (value["opt_compress"].as<bool>(false))
             acc->set_connect_option(MYSQL_OPT_COMPRESS, true);
-        //acc->set_connect_option(MARIADB_OPT_MULTI_STATEMENTS, true);
-        //acc->set_connect_option(MARIADB_OPT_MULTI_RESULTS, true);
+        if (value["opt_read_timeout"].IsDefined())
+            acc->set_connect_option(MYSQL_OPT_READ_TIMEOUT, value["opt_read_timeout"].as<int>());
+        if (value["opt_write_timeout"].IsDefined())
+            acc->set_connect_option(MYSQL_OPT_WRITE_TIMEOUT, value["opt_write_timeout"].as<int>());
+
+        if (value["opt_multi_statement"].as<bool>(false)) {
+            acc->set_connect_option(MARIADB_OPT_MULTI_STATEMENTS, true);
+            acc->set_connect_option(MARIADB_OPT_MULTI_RESULTS, true);
+        }
+
         //acc->set_auto_commit(false);
 
         accounts[accountName] = acc;
