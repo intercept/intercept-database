@@ -124,6 +124,7 @@ void Config::reloadConfig() {
     parseTinyintAsBool = globalConf["parseTinyintAsBool"].as<bool>(false);
     dateType = dateTypeFromString(globalConf["parseDateType"].as<r_string>("string"sv));
     DBNullEqualEmptyString = globalConf["DBNullEqualEmptyString"].as<bool>(false);
+    workerCount = globalConf["workerCount"].as<size_t>(1);
 
     auto loggingConf = globalConf["logging"];
 

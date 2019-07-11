@@ -51,7 +51,7 @@ public:
     void doCleanup();
     bool isConnected(mariadb::account_ref acc);
 
-    std::map<mariadb::account_ref, std::shared_ptr<Worker>> workers;
+    std::map<mariadb::account_ref, std::vector<std::shared_ptr<Worker>>> workers;
     std::chrono::system_clock::time_point lastCleanup;
 
 

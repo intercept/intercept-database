@@ -89,6 +89,10 @@ public:
         return DBNullEqualEmptyString;
     }
 
+    size_t getWorkerCount() const {
+        return workerCount;
+    }
+
     static void initCommands();
     static inline registered_sqf_function handle_cmd_reloadConfig;
     static inline registered_sqf_function handle_cmd_version;
@@ -101,5 +105,6 @@ private:
     bool parseTinyintAsBool = false;
     bool DBNullEqualEmptyString = false;
     ConfigDateType dateType = ConfigDateType::humanString;
+    size_t workerCount;
 
 };

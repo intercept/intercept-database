@@ -2,6 +2,7 @@
 #include "ittnotify.h"
 #include "../ittnotify/ittnotify.h"
 #include "logger.h"
+#include "config.h"
 using namespace std::chrono_literals;
 
 #include <iomanip> // put_time
@@ -165,11 +166,22 @@ std::future<bool> Threading::pushTask(mariadb::connection_ref con, std::function
     logMessageWithTime("Threading::pushTask");
     __itt_task_begin(domain, __itt_null, __itt_null, threading_pushTask);
     auto found = workers.find(con->account());
-    if (found != workers.end() && !found->second->exiting) {
-        //Already have a worker on that account.
-        auto ret = found->second->pushTask(std::move(task), intoWorkList);
-        __itt_task_end(domain);
-        return ret;
+    if (found != workers.end()) {
+
+        if (found->second.size() == Config::get().getWorkerCount()) {
+            const auto it = std::min_element(found->second.begin(), found->second.end(), [](const std::shared_ptr<Worker>& l, const std::shared_ptr<Worker>& r) {
+                if (l->exiting) return false;
+                if (r->exiting) return true;
+                return l->tasks.size() < r->tasks.size();
+            });
+
+            if (!(*it)->exiting) {
+                //Already have a worker on that account.
+                auto ret = (*it)->pushTask(std::move(task), intoWorkList);
+                __itt_task_end(domain);
+                return ret;
+            }
+        }
     }
 
 
@@ -179,7 +191,7 @@ std::future<bool> Threading::pushTask(mariadb::connection_ref con, std::function
     newWorker->parentConnection = con;
     newWorker->workerConnection = mariadb::connection::create(con->account());
     newWorker->myThread = std::make_shared<std::thread>([newWorker]() {newWorker->run(); });
-    workers[con->account()] = newWorker;
+    workers[con->account()].emplace_back(newWorker);
     __itt_task_end(domain);
 
     auto ret = newWorker->pushTask(std::move(task), intoWorkList);
@@ -195,33 +207,38 @@ void Threading::doCleanup() {
     __itt_task_begin(domain, __itt_null, __itt_null, threading_doCleanup);
 
     //Will only be called from mainthread so noone can insert stuff now.
-    for (auto& [acc,worker] : workers) {
-        __itt_sync_prepare(&worker->taskLock);
-        std::unique_lock l(worker->taskLock);
-        __itt_sync_acquired(&worker->taskLock);
-        if (!worker->tasks.empty()) continue; //Is still working on tasks
-        logMessageWithTime("worker cleanup check");
-        auto lastTask = std::chrono::system_clock::from_time_t(worker->lastJob);
-        LOG_Thread("Worker::cleanupCheck W"+std::to_string(reinterpret_cast<uintptr_t>(worker.get())) + " LastTask "+ 
-        std::to_string(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - lastTask).count())+"s"
-        );
-        if (lastTask + 60s < std::chrono::system_clock::now()) { //no tasks for 60s, kill worker
-            LOG_Thread("Worker::doCleanup W"+std::to_string(reinterpret_cast<uintptr_t>(worker.get())));
-            //logMessageWithTime("worker do cleanup");
-            __itt_task_begin(domain, __itt_null, __itt_null, threading_doCleanup_workerDoCleanup);
-            worker->parentConnection.reset(); //no parent will mean it exits next iteration
-            __itt_sync_releasing(&worker->taskLock);
-            l.unlock();
-            worker->hasTasksCondition.notify_all(); //force iteration
-            if (worker->myThread->joinable()) worker->myThread->join(); //wait for thread to exit
-            workers.erase(acc);
-            __itt_task_end(domain);
-            LOG_Thread("Worker::cleanupDone W"+std::to_string(reinterpret_cast<uintptr_t>(worker.get())));
+    for (auto& [acc,workerlist] : workers) {
 
-            __itt_task_end(domain);
-            return;
+        for (auto& worker : workerlist) {
+            __itt_sync_prepare(&worker->taskLock);
+            std::unique_lock l(worker->taskLock);
+            __itt_sync_acquired(&worker->taskLock);
+            if (!worker->tasks.empty()) continue; //Is still working on tasks
+            logMessageWithTime("worker cleanup check");
+            auto lastTask = std::chrono::system_clock::from_time_t(worker->lastJob);
+            LOG_Thread("Worker::cleanupCheck W"+std::to_string(reinterpret_cast<uintptr_t>(worker.get())) + " LastTask "+ 
+            std::to_string(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - lastTask).count())+"s"
+            );
+            if (lastTask + 60s < std::chrono::system_clock::now()) { //no tasks for 60s, kill worker
+                LOG_Thread("Worker::doCleanup W"+std::to_string(reinterpret_cast<uintptr_t>(worker.get())));
+                //logMessageWithTime("worker do cleanup");
+                __itt_task_begin(domain, __itt_null, __itt_null, threading_doCleanup_workerDoCleanup);
+                worker->parentConnection.reset(); //no parent will mean it exits next iteration
+                __itt_sync_releasing(&worker->taskLock);
+                l.unlock();
+                worker->hasTasksCondition.notify_all(); //force iteration
+                if (worker->myThread->joinable()) worker->myThread->join(); //wait for thread to exit
+                workerlist.erase(std::remove(workerlist.begin(), workerlist.end(), worker), workerlist.end());
+                //workers.erase(acc);
+                __itt_task_end(domain);
+                LOG_Thread("Worker::cleanupDone W"+std::to_string(reinterpret_cast<uintptr_t>(worker.get())));
+
+                __itt_task_end(domain);
+                return;
+            }
         }
-
+        if (workerlist.empty())
+            workers.erase(acc);
     }
     lastCleanup = std::chrono::system_clock::now();
     __itt_task_end(domain);
@@ -231,7 +248,12 @@ bool Threading::isConnected(mariadb::account_ref acc) {
     auto found = workers.find(acc);
     if (found == workers.end()) return false;
     //#TODO potentially not threadsafe
-    return found->second->workerConnection->connected();
+
+    for (auto& it : found->second) {
+       if (it->workerConnection->connected()) return true;
+    }
+
+    return false;
 }
 
 void Threading::pushAsyncWork(ref<GameDataDBAsyncResult> work) {
