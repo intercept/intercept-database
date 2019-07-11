@@ -36,7 +36,7 @@ void Logger::pushTimestamp(std::ostream& str) const {
     auto timeT = std::chrono::system_clock::to_time_t(currentTime);
 
     char buffer [84];
-    auto leng = strftime(buffer, 80, "%Y-%m-%d %H:%02M:%S", localtime(&timeT));
+    auto leng = strftime(buffer, 80, "%Y-%m-%d %H:%M:%S", localtime(&timeT));
     sprintf(&buffer[leng-1], ".%03lld", millisSinceEpoch - timeT*1000);
 
     str << "["sv << buffer << "] "sv;
