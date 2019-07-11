@@ -383,9 +383,11 @@ game_value Connection::cmd_executeAsync(game_state& gs, game_value_parameter con
 game_value Connection::cmd_ping(game_state& gs, game_value_parameter con) {
     try {
         auto session = con.get_as<GameDataDBConnection>()->session;
-        auto result = session->query("SELECT 1;"sv);
+        //executes mysql_ping
+        auto result = session->connected(); //query("SELECT 1;"sv);
 
-        return result->next() && result->get_signed64(0) == 1;
+        //return result->next() && result->get_signed64(0) == 1;
+        return result;
     } catch (mariadb::exception::connection& x) {
         auto exText = r_string("Intercept-DB ping exception ") + x.what();
         gs.set_script_error(game_state::game_evaluator::evaluator_error_type::foreign,
