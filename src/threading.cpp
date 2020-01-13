@@ -278,8 +278,8 @@ void Threading::updateAsyncWorkLists() {
             
             return res != std::future_status::ready; });
     // range insert with move
-    completedAsyncTasks.insert(completedAsyncTasks.end(), std::make_move_iterator(p),
-        std::make_move_iterator(asyncWork.end()));
+    completedAsyncTasks.insert(completedAsyncTasks.end(), p, //std::make_move_iterator(
+        asyncWork.end());
     // erase the moved-from elements.
     asyncWork.erase(p, asyncWork.end());
     //#TODO we can just delete completed tasks that don't have callback or callbackargs
