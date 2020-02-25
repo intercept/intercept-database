@@ -311,7 +311,7 @@ game_value Result::cmd_bindCallback(game_state&, game_value_parameter left, game
         return {};
     }
     res->data->callback.push_back(right[0]);
-    res->data->callbackArgs.push_back(right[1]); //#TODO call directly if result is ready
+    res->data->callbackArgs.push_back(right[1]);
     return {};
 }
 
@@ -340,7 +340,10 @@ game_value Result::cmd_waitForResult(game_state&, game_value_parameter right) {
     {
         sqf::call(res->data->callback[i], { gd_res, res->data->callbackArgs[i] });
     }
-    
+    res->data->callback.clear();
+    res->data->callbackArgs.clear();
+    res->data->callback.shrink_to_fit();
+    res->data->callbackArgs.shrink_to_fit();
     return gd_res;
 }
 

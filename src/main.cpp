@@ -66,6 +66,10 @@ void intercept::on_frame() {
             {
                 sqf::call(it->data->callback[i], { gd_res, it->data->callbackArgs[i] });
             }
+            it->data->callback.clear();
+            it->data->callbackArgs.clear();
+            it->data->callback.shrink_to_fit();
+            it->data->callbackArgs.shrink_to_fit();
         }
         __itt_counter_dec(counter);
         __itt_task_end(domainMain);
