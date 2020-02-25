@@ -304,14 +304,14 @@ game_value Result::cmd_toParsedArray(game_state& state, game_value_parameter rig
 game_value Result::cmd_bindCallback(game_state&, game_value_parameter left, game_value_parameter right) {
     auto& res = left.get_as<GameDataDBAsyncResult>();
 
-    if (res->data->fut.get()) {
+    if (res->data->res) {
         auto gd_res = new GameDataDBResult();
         gd_res->res = res->data->res;
         sqf::call(right[0], { gd_res, right[1] });
         return {};
     }
-    res->data->callback.push_back(right[0]);
-    res->data->callbackArgs.push_back(right[1]);
+    res->data->callbacks.push_back(right[0]);
+    res->data->callbacksArgs.push_back(right[1]);
     return {};
 }
 
@@ -335,15 +335,17 @@ game_value Result::cmd_waitForResult(game_state&, game_value_parameter right) {
 
     auto gd_res = new GameDataDBResult();
     gd_res->res = res->data->res;
-
-    for (size_t i = 0; i < res->data->callback.size(); i++)
-    {
-        sqf::call(res->data->callback[i], { gd_res, res->data->callbackArgs[i] });
+    if (res->data->callbacks.size() != 0) {
+        for (size_t i = 0; i < res->data->callbacks.size(); i++)
+        {
+            sqf::call(res->data->callbacks[i], { gd_res, res->data->callbacksArgs[i] });
+        }
+        res->data->callbacks.clear();
+        res->data->callbacksArgs.clear();
+        res->data->callbacks.shrink_to_fit();
+        res->data->callbacksArgs.shrink_to_fit();
     }
-    res->data->callback.clear();
-    res->data->callbackArgs.clear();
-    res->data->callback.shrink_to_fit();
-    res->data->callbackArgs.shrink_to_fit();
+    
     return gd_res;
 }
 
