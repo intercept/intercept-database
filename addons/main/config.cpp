@@ -1,16 +1,16 @@
 class CfgPatches {
-	class intercept_template_plugin { //Change this
-		name = "Intercept Template Plugin"; //Change this
+	class intercept_database {
+		name = "Intercept Database";
 		units[] = {};
 		weapons[] = {};
 		requiredVersion = 1.82;
 		requiredAddons[] = {"intercept_core"};
-		author = "Dedmen"; //Change this
-		authors[] = {"Dedmen"}; //Change this
-		url = "https://github.com/intercept/intercept-plugin-template"; //Change this
-		version = "1.0";
-		versionStr = "1.0";
-		versionAr[] = {1,0};
+		author = "Dedmen";
+		authors[] = {"Dedmen"};
+		url = "https://github.com/intercept/intercept-database";
+		version = "1.5";
+		versionStr = "1.5";
+		versionAr[] = {1,5};
 	};
 };
 class Intercept {
