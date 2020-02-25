@@ -58,18 +58,15 @@ void intercept::on_frame() {
     for (auto& it : Threading::get().completedAsyncTasks) {
         __itt_task_begin(domainMain, __itt_null, __itt_null, main_on_frame_callback);
 
-        if (it->data->callbacks.size() != 0 && it->data->res) {
+        if (!it->data->callbacks.is_empty() && it->data->res) {
             logMessageWithTime("task callback");
             auto gd_res = new GameDataDBResult();
             gd_res->res = it->data->res;
-            for (size_t i = 0; i < it->data->callbacks.size(); i++)
-            {
-                sqf::call(it->data->callbacks[i], { gd_res, it->data->callbacksArgs[i] });
+            for each (std::pair<game_value, game_value> callback in it->data->callbacks) {
+                sqf::call(callback.first, { gd_res, callback.second });
             }
             it->data->callbacks.clear();
-            it->data->callbacksArgs.clear();
             it->data->callbacks.shrink_to_fit();
-            it->data->callbacksArgs.shrink_to_fit();
         }
         __itt_counter_dec(counter);
         __itt_task_end(domainMain);

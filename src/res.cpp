@@ -310,8 +310,7 @@ game_value Result::cmd_bindCallback(game_state&, game_value_parameter left, game
         sqf::call(right[0], { gd_res, right[1] });
         return {};
     }
-    res->data->callbacks.push_back(right[0]);
-    res->data->callbacksArgs.push_back(right[1]);
+    res->data->callbacks.push_back({ right[0], right[1] });
     return {};
 }
 
@@ -335,15 +334,12 @@ game_value Result::cmd_waitForResult(game_state&, game_value_parameter right) {
 
     auto gd_res = new GameDataDBResult();
     gd_res->res = res->data->res;
-    if (res->data->callbacks.size() != 0) {
-        for (size_t i = 0; i < res->data->callbacks.size(); i++)
-        {
-            sqf::call(res->data->callbacks[i], { gd_res, res->data->callbacksArgs[i] });
+    if (!res->data->callbacks.is_empty()) {
+        for each (std::pair<game_value, game_value> callback in res->data->callbacks) {
+            sqf::call(callback.first, { gd_res, callback.second });
         }
         res->data->callbacks.clear();
-        res->data->callbacksArgs.clear();
         res->data->callbacks.shrink_to_fit();
-        res->data->callbacksArgs.shrink_to_fit();
     }
     
     return gd_res;

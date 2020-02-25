@@ -114,8 +114,7 @@ public:
         std::future<bool> fut;
         mariadb::result_set_ref res;
         r_string statementName; //Is null if this was not a statement from config
-        std::vector<game_value> callbacks;
-        std::vector<game_value> callbacksArgs;
+        auto_array<std::pair<game_value, game_value>> callbacks;
     };
     std::shared_ptr<dataT> data;
 };
