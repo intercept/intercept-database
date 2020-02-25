@@ -28,7 +28,7 @@ void Logger::logThread(intercept::types::r_string message) {
 }
 
 void Logger::pushTimestamp(std::ostream& str) const {
-      std::time_t t = std::time(0);   // get time now
+    std::time_t t = std::time(0);   // get time now
     std::tm* now = std::localtime(&t);
 
     auto currentTime = std::chrono::system_clock::now();
