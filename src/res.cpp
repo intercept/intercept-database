@@ -335,9 +335,8 @@ game_value Result::cmd_waitForResult(game_state&, game_value_parameter right) {
     auto gd_res = new GameDataDBResult();
     gd_res->res = res->data->res;
     if (!res->data->callbacks.is_empty()) {
-        for each (std::pair<game_value, game_value> callback in res->data->callbacks) {
-            sqf::call(callback.first, { gd_res, callback.second });
-        }
+        for (auto& [code, arg] : res->data->callbacks) 
+            sqf::call(code, { gd_res, arg });
         res->data->callbacks.clear();
         res->data->callbacks.shrink_to_fit();
     }

@@ -62,9 +62,8 @@ void intercept::on_frame() {
             logMessageWithTime("task callback");
             auto gd_res = new GameDataDBResult();
             gd_res->res = it->data->res;
-            for each (std::pair<game_value, game_value> callback in it->data->callbacks) {
-                sqf::call(callback.first, { gd_res, callback.second });
-            }
+            for (auto& [code, arg] : it->data->callbacks)
+                sqf::call(code, { gd_res, arg });
             it->data->callbacks.clear();
             it->data->callbacks.shrink_to_fit();
         }
