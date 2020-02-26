@@ -15,3 +15,4 @@
 [submodule "yaml-cpp"]
 	path = yaml-cpp
 	url = https://github.com/dedmen/yaml-cpp.git
+    branch = intercept

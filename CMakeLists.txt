@@ -30,15 +30,6 @@ else()
 endif()
 
 
-#yaml resets c++17 so I just move it above ours so we don't have to re-set
-SET(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "Don't want" FORCE)
-SET(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "Don't want" FORCE)
-SET(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "Don't want" FORCE)
-SET(YAML_CPP_INSTALL OFF CACHE BOOL "Don't want" FORCE)
-SET(MSVC_SHARED_RT OFF CACHE BOOL "want static" FORCE)
-
-add_subdirectory(yaml-cpp)
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -69,6 +60,13 @@ else()
 	set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "/OPT:REF /DEBUG:FULL") 
 endif()
 
+SET(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "Don't want" FORCE)
+SET(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "Don't want" FORCE)
+SET(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "Don't want" FORCE)
+SET(YAML_CPP_INSTALL OFF CACHE BOOL "Don't want" FORCE)
+SET(MSVC_SHARED_RT OFF CACHE BOOL "want static" FORCE)
+
+add_subdirectory(yaml-cpp)
 
 add_subdirectory(mariadb-connector-c)
 
