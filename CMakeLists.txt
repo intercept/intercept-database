@@ -74,8 +74,8 @@ add_subdirectory(mariadb-connector-c)
 
 CONFIGURE_FILE("${CMAKE_CURRENT_BINARY_DIR}/mariadb-connector-c/include/mariadb_version.h"
                "${PROJECT_SOURCE_DIR}/mariadb-connector-c/include/mariadb_version.h")
-
-
+set(MariaDBClient_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/mariadb-connector-c/include")
+set(MariaDBClient_LIBRARY "${PROJECT_SOURCE_DIR}/mariadb-connector-c/libmariadb")
 
 add_subdirectory(mariadbpp)
 
