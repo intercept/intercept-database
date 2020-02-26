@@ -4,12 +4,15 @@
 [submodule "mariadb-connector-c"]
 	path = mariadb-connector-c
 	url = https://github.com/dedmen/mariadb-connector-c.git
+    branch = intercept_3_2
 [submodule "mariadbpp"]
 	path = mariadbpp
 	url = https://github.com/dedmen/mariadbpp
+    branch = intercept
 [submodule "wolfssl"]
 	path = wolfssl
 	url = https://github.com/wolfSSL/wolfssl
 [submodule "yaml-cpp"]
 	path = yaml-cpp
 	url = https://github.com/dedmen/yaml-cpp.git
+    branch = intercept

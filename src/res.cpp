@@ -304,13 +304,20 @@ game_value Result::cmd_toParsedArray(game_state& state, game_value_parameter rig
 game_value Result::cmd_bindCallback(game_state&, game_value_parameter left, game_value_parameter right) {
     auto& res = left.get_as<GameDataDBAsyncResult>();
 
-    res->data->callback = right[0];
-    res->data->callbackArgs = right[1]; //#TODO call directly if result is ready
+    if (res->data->res) {
+        auto gd_res = new GameDataDBResult();
+        gd_res->res = res->data->res;
+        sqf::call(right[0], { gd_res, right[1] });
+        return {};
+    }
+    res->data->callbacks.push_back({ right[0], right[1] });
     return {};
 }
 
 game_value Result::cmd_waitForResult(game_state&, game_value_parameter right) {
     auto& res = right.get_as<GameDataDBAsyncResult>();
+
+    //#TODO suspend in scheduled
 
     res->data->fut.wait();
 
@@ -329,7 +336,12 @@ game_value Result::cmd_waitForResult(game_state&, game_value_parameter right) {
 
     auto gd_res = new GameDataDBResult();
     gd_res->res = res->data->res;
-    sqf::call(res->data->callback, { gd_res, res->data->callbackArgs });
+    if (!res->data->callbacks.is_empty()) {
+        for (auto& [code, arg] : res->data->callbacks) 
+            sqf::call(code, { gd_res, arg });
+        res->data->callbacks.clear();
+    }
+    
     return gd_res;
 }
 
