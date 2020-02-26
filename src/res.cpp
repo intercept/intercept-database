@@ -317,6 +317,8 @@ game_value Result::cmd_bindCallback(game_state&, game_value_parameter left, game
 game_value Result::cmd_waitForResult(game_state&, game_value_parameter right) {
     auto& res = right.get_as<GameDataDBAsyncResult>();
 
+    //#TODO suspend in scheduled
+
     res->data->fut.wait();
 
     std::unique_lock l(Threading::get().asyncWorkMutex);
@@ -338,7 +340,6 @@ game_value Result::cmd_waitForResult(game_state&, game_value_parameter right) {
         for (auto& [code, arg] : res->data->callbacks) 
             sqf::call(code, { gd_res, arg });
         res->data->callbacks.clear();
-        res->data->callbacks.shrink_to_fit();
     }
     
     return gd_res;

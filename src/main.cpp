@@ -65,7 +65,6 @@ void intercept::on_frame() {
             for (auto& [code, arg] : it->data->callbacks)
                 sqf::call(code, { gd_res, arg });
             it->data->callbacks.clear();
-            it->data->callbacks.shrink_to_fit();
         }
         __itt_counter_dec(counter);
         __itt_task_end(domainMain);
