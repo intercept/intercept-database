@@ -210,6 +210,8 @@ void Threading::doCleanup() {
     logMessageWithTime("Threading::doCleanup");
     __itt_task_begin(domain, __itt_null, __itt_null, threading_doCleanup);
 
+    std::vector<mariadb::account_ref> empty_accounts;
+
     //Will only be called from mainthread so noone can insert stuff now.
     for (auto& [acc,workerlist] : workers) {
 
@@ -242,7 +244,10 @@ void Threading::doCleanup() {
             }
         }
         if (workerlist.empty())
-            workers.erase(acc);
+            empty_accounts.push_back(acc);
+    }
+    for (mariadb::account_ref& acc : empty_accounts) {
+        workers.erase(acc);
     }
     lastCleanup = std::chrono::system_clock::now();
     __itt_task_end(domain);
