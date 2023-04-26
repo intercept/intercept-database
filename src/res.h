@@ -17,11 +17,11 @@ public:
     static game_value cmd_waitForResult(game_state&, game_value_parameter right);
 
 	static void initCommands();
-	static inline sqf_script_type GameDataDBResult_type;
+	static inline sqf_script_type* GameDataDBResult_type;
 	static inline game_data_type GameDataDBResult_typeE;
-    static inline sqf_script_type GameDataDBAsyncResult_type;
+    static inline sqf_script_type* GameDataDBAsyncResult_type;
     static inline game_data_type GameDataDBAsyncResult_typeE;
-    static inline sqf_script_type GameDataDBNull_type;
+    static inline sqf_script_type* GameDataDBNull_type;
     static inline game_data_type GameDataDBNull_typeE;
 
 	static inline types::registered_sqf_function handle_cmd_affectedRows;
@@ -38,7 +38,7 @@ class GameDataDBResult : public game_data {
 public:
     GameDataDBResult() {}
     void lastRefDeleted() const override { delete this; }
-    const sqf_script_type& type() const override { return Result::GameDataDBResult_type; }
+    const sqf_script_type& type() const override { return *Result::GameDataDBResult_type; }
     ~GameDataDBResult() override {};
 
     bool get_as_bool() const override { return true; }
@@ -78,7 +78,7 @@ class GameDataDBAsyncResult : public game_data {
 public:
     GameDataDBAsyncResult() {}
     void lastRefDeleted() const override { delete this; }
-    const sqf_script_type& type() const override { return Result::GameDataDBAsyncResult_type; }
+    const sqf_script_type& type() const override { return *Result::GameDataDBAsyncResult_type; }
     ~GameDataDBAsyncResult() override {};
 
     bool get_as_bool() const override { return true; }
@@ -124,7 +124,7 @@ class GameDataDBNull : public game_data {
 public:
     GameDataDBNull() {}
     void lastRefDeleted() const override { delete this; }
-    const sqf_script_type& type() const override { return Result::GameDataDBNull_type; }
+    const sqf_script_type& type() const override { return *Result::GameDataDBNull_type; }
     ~GameDataDBNull() override {};
 
     bool get_as_bool() const override { return true; }

@@ -25,7 +25,7 @@ public:
 
 
 	static void initCommands();
-	static inline sqf_script_type GameDataDBConnection_type;
+	static inline sqf_script_type* GameDataDBConnection_type;
 	static inline game_data_type GameDataDBConnection_typeE;
 
 

@@ -25,7 +25,7 @@ public:
 
 
 	static void initCommands();
-	static inline sqf_script_type GameDataDBQuery_type;
+	static inline sqf_script_type* GameDataDBQuery_type;
 	static inline game_data_type GameDataDBQuery_typeE;
 
     static inline types::registered_sqf_function handle_cmd_prepareQuery;
@@ -45,7 +45,7 @@ class GameDataDBQuery : public game_data {
 public:
     GameDataDBQuery() {}
     void lastRefDeleted() const override { delete this; }
-    const sqf_script_type& type() const override { return Query::GameDataDBQuery_type; }
+    const sqf_script_type& type() const override { return *Query::GameDataDBQuery_type; }
     ~GameDataDBQuery() override {};
 
     bool get_as_bool() const override { return true; }

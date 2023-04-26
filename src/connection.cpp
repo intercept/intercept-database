@@ -18,7 +18,7 @@ class GameDataDBConnection : public game_data {
 public:
     GameDataDBConnection() {}
     void lastRefDeleted() const override { delete this; }
-    const sqf_script_type& type() const override { return Connection::GameDataDBConnection_type; }
+    const sqf_script_type& type() const override { return *Connection::GameDataDBConnection_type; }
     ~GameDataDBConnection() override {};
 
     bool get_as_bool() const override { return true; }
