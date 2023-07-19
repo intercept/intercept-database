@@ -64,7 +64,7 @@ game_data* createGameDataDBConnection(param_archive* ar) {
     return x;
 }
 
-bool Connection::throwQueryError(game_state& gs, mariadb::connection_ref connection, size_t errorID, r_string errorMessage, r_string queryString, std::optional<sourcedocpos> sourcePosition) {
+bool Connection::throwQueryError(game_state& gs, mariadb::connection_ref connection, size_t errorID, r_string errorMessage, r_string queryString, std::optional<sourcedocpos> sourcePosition) { //#TODO take SourceDocPosRef
     if (connection->account()->hasErrorHandler()) {
         for (auto& it : connection->account()->getErrorHandlers()) {
             auto res = sqf::call(it, { errorMessage, errorID, queryString });
@@ -129,7 +129,7 @@ GameDataDBAsyncResult* Connection::pushAsyncQuery(game_state& gs, mariadb::conne
                 invoker_lock l;
                 throwQueryError(gs, con, 2, 
                     r_string("Invalid number of bind values. Expected "sv)+std::to_string(statement->get_bind_count())+" got "sv+std::to_string(boundValuesQuery.size())
-                    , queryString, sourcePos);
+                    , queryString, *sourcePos);
                 return false;
             }
             uint32_t idx = 0;
@@ -184,12 +184,12 @@ GameDataDBAsyncResult* Connection::pushAsyncQuery(game_state& gs, mariadb::conne
         }
         catch (mariadb::exception::connection& x) {
             invoker_lock l;
-            throwQueryError(gs, con, static_cast<size_t>(x.error_id()), static_cast<r_string>(x.what()), queryString, sourcePos);
+            throwQueryError(gs, con, static_cast<size_t>(x.error_id()), static_cast<r_string>(x.what()), queryString, *sourcePos);
             return false;
         }
         catch (std::out_of_range& x) {
             invoker_lock l;
-            throwQueryError(gs, con, 1337, static_cast<r_string>(x.what()), queryString, sourcePos);
+            throwQueryError(gs, con, 1337, static_cast<r_string>(x.what()), queryString, *sourcePos);
             return false;
         }
     }, true);
