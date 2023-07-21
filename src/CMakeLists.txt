@@ -47,7 +47,7 @@ else()
 endif()
 
 
-target_link_libraries(${INTERCEPT_PLUGIN_NAME} mariadbclientpp yaml-cpp ${libittnotify})
+target_link_libraries(${INTERCEPT_PLUGIN_NAME} mariadbclientpp mariadbclient yaml-cpp ${libittnotify} Ws2_32.Lib Crypt32.Lib shlwapi.lib)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${INTERCEPT_INCLUDE_PATH})
 

@@ -68,6 +68,8 @@ SET(MSVC_SHARED_RT OFF CACHE BOOL "want static" FORCE)
 
 add_subdirectory(yaml-cpp)
 
+SET(CC_PLUGIN_DEFAULT "STATIC" CACHE STRING "want static" FORCE)
+
 add_subdirectory(mariadb-connector-c)
 
 CONFIGURE_FILE("${CMAKE_CURRENT_BINARY_DIR}/mariadb-connector-c/include/mariadb_version.h"
