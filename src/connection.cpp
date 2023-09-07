@@ -291,7 +291,7 @@ game_value Connection::cmd_execute(game_state& gs, game_value_parameter con, gam
     auto session = con.get_as<GameDataDBConnection>()->session;
     auto query = qu.get_as<GameDataDBQuery>();
 
-    if (!gs.get_vm_context()->is_scheduled()) { //#TODO just keep using the callstack item but tell it to wait
+    if (true /*!gs.get_vm_context()->is_scheduled()*/) { //#TODO just keep using the callstack item but tell it to wait
 
         try {
             auto statement = session->create_statement(query->getQueryString());
@@ -439,7 +439,7 @@ game_value Connection::cmd_loadSchema(game_state& gs, game_value_parameter con, 
     t.close();
 
 
-    if (!gs.get_vm_context()->is_scheduled()) { 
+    if (true /*!gs.get_vm_context()->is_scheduled()*/) {
         try {
             return static_cast<float>(session->execute(static_cast<r_string>(str)));
         }
