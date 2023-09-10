@@ -70,6 +70,8 @@ add_subdirectory(yaml-cpp)
 
 SET(CC_PLUGIN_DEFAULT "STATIC" CACHE STRING "want static" FORCE)
 
+
+SET(INSTALL_PLUGINDIR "${CMAKE_CURRENT_BINARY_DIR}/mariadb-connector-c") 
 add_subdirectory(mariadb-connector-c)
 
 CONFIGURE_FILE("${CMAKE_CURRENT_BINARY_DIR}/mariadb-connector-c/include/mariadb_version.h"

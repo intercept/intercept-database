@@ -27,6 +27,7 @@ public:
 class Config : public intercept::singleton<Config> {
     
 public:
+    std::filesystem::path GetCurrentDLLPath();
     void reloadConfig();
 
     ConfigStatement getStatement(r_string name) {
