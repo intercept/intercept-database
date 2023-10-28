@@ -40,6 +40,7 @@ public:
 private:
     void pushTimestamp(std::ostream& str) const;
     void refreshLogfiles();
+    void deleteOldLogs(int days);
 
     std::mutex queryLog_lock;
     bool queryLogEnabled = false;

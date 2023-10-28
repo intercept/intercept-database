@@ -2,6 +2,7 @@
 #include <filesystem>
 #include "yaml-cpp/yaml.h"
 #include "logger.h"
+#include <Windows.h>
 
 
 namespace YAML {
@@ -41,8 +42,31 @@ ConfigDateType dateTypeFromString(std::string_view str) {
     throw std::invalid_argument("Invalid value passed as parseDateTime entry");
 }
 
+std::filesystem::path Config::GetCurrentDLLPath() {
+    char path[MAX_PATH];
+    HMODULE hm = NULL;
+
+    if (GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+        GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+        (LPCSTR)Config::initCommands, &hm) == 0)
+    {
+        int ret = GetLastError();
+        fprintf(stderr, "GetModuleHandle failed, error = %d\\n", ret);
+        // Return or however you want to handle an error.
+    }
+    if (GetModuleFileName(hm, path, sizeof(path)) == 0)
+    {
+        int ret = GetLastError();
+        fprintf(stderr, "GetModuleFileName failed, error = %d\\n", ret);
+        // Return or however you want to handle an error.
+    }
+
+    return std::filesystem::path(path);
+}
+
 void Config::reloadConfig() {
-    std::filesystem::path configFilePath("@InterceptDB/config.yaml");
+
+    std::filesystem::path configFilePath(Config::GetCurrentDLLPath().parent_path().parent_path() / "config.yaml");
 
     if (!std::filesystem::exists(configFilePath))
         throw std::filesystem::filesystem_error("File not found", configFilePath, std::error_code());
