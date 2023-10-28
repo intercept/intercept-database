@@ -2,11 +2,14 @@
 
 #include <fstream>
 #include <ctime>
+#include <iostream>
+#include <chrono>
+#include <filesystem>
 
 void Logger::init(std::filesystem::path outputDir) {
     std::filesystem::create_directories(outputDir);
     outputDirectory = std::move(outputDir);
-    //cleanupOldLogs(10); TODO
+    deleteOldLogs(10);
     refreshLogfiles();
 }
 
@@ -72,4 +75,23 @@ void Logger::refreshLogfiles() {
 }
 
 
+void  Logger::deleteOldLogs(int days) {
+    std::filesystem::path& path = outputDirectory;
+    try {
+        auto now = std::filesystem::file_time_type::clock::now();
+        auto duration = std::chrono::hours(24 * days);
+        for (auto& p : std::filesystem::directory_iterator(path)) {
+            if (p.is_regular_file() && p.path().extension() == ".log") {
+                auto last_modified = std::filesystem::last_write_time(p);
+                if (now - last_modified > duration) {
+                    std::filesystem::remove(p);
+                    std::cout << "Deleted: " << p.path() << '\n';
+                }
+            }
+        }
+    }
+    catch (std::exception& e) {
+        std::cerr << e.what() << '\n';
+    }
+}
 
